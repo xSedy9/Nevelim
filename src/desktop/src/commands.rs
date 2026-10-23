@@ -24,14 +24,10 @@ use crate::focus;
 use crate::overlay;
 use crate::state::{AppState, ModalInit};
 
-/// Base directory for user data (config, templates, history): the executable
-/// directory, falling back to the CWD in dev mode.
+/// Base directory for user data (config, templates, history) — resolved by
+/// the core crate (exe dir -> workspace root -> cwd).
 fn base_dir() -> PathBuf {
-    std::env::current_exe()
-        .ok()
-        .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        .filter(|d| d.join("config.json").exists() || d.join("templates").exists())
-        .unwrap_or_else(|| PathBuf::from("."))
+    quick_snippets_core::config::resolve_base_dir()
 }
 
 /// Sanitized configuration snapshot for the frontend (API keys stripped).
