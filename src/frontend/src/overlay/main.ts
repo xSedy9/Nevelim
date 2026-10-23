@@ -1,0 +1,285 @@
+/**
+ * Overlay entry point: wires the state machine, rendering, animations,
+ * navigation input and the Tauri event protocol together.
+ */
+
+import { listen } from "@tauri-apps/api/event";
+
+import { api, type AppStateDto } from "../shared/ipc";
+import { SNIPPET, isActionClick, isHubClick, isSnippetClick, slotY } from "./geometry";
+import {
+  initialModel,
+  moveDown,
+  moveUp,
+  expand,
+  retract,
+  type OverlayModel,
+} from "./state";
+import { buildOverlay, update, type OverlayDom, type SnippetInfo } from "./render";
+import {
+  expandActions,
+  expandSnippets,
+  hubBloom,
+  resetAfterHide,
+  retractActions,
+  retractSnippets,
+  suckInClose,
+} from "./anim";
+
+/** Action keys in selection order. */
+const ACTION_KEYS = ["copy", "paste", "edit", "adapt"] as const;
+type ActionKey = (typeof ACTION_KEYS)[number];
+
+/** Mutable runtime session state. */
+const session = {
+  model: initialModel(0),
+  templates: [] as SnippetInfo[],
+  dom: null as OverlayDom | null,
+  animating: false,
+  closing: false,
+  lastHit: false,
+};
+
+/** Applies a model change to the DOM (cheap; motion handled by CSS). */
+function apply(model: OverlayModel): void {
+  session.model = model;
+  if (session.dom) update(session.dom, session.model);
+}
+
+/** Runs an animated phase transition while suppressing input. */
+async function animate(fn: () => Promise<void>): Promise<void> {
+  if (session.animating || session.closing) return;
+  session.animating = true;
+  try {
+    await fn();
+  } finally {
+    session.animating = false;
+  }
+}
+
+/** Expands hub -> snippets with animation. */
+function expandToSnippets(): void {
+  const next = expand(session.model);
+  if (!next) return;
+  void animate(async () => {
+    apply(next);
+    await expandSnippets(session.dom!);
+  });
+}
+
+/** Expands snippets -> actions with animation. */
+function expandToActions(): void {
+  const next = expand(session.model);
+  if (!next) return;
+  void animate(async () => {
+    apply(next);
+    await expandActions(session.dom!);
+  });
+}
+
+/** Retracts one level with animation. */
+function retractOne(): void {
+  const next = retract(session.model);
+  if (!next) return;
+  void animate(async () => {
+    if (next.phase === "snippets") await retractActions(session.dom!);
+    else await retractSnippets(session.dom!);
+    apply(next);
+  });
+}
+
+/** Animated selection move (up). */
+function navUp(): void {
+  const prev = session.model;
+  const next = moveUp(prev);
+  if (next !== prev) apply(next);
+}
+
+/** Animated selection move (down). */
+function navDown(): void {
+  const prev = session.model;
+  const next = moveDown(prev);
+  if (next !== prev) apply(next);
+}
+
+/** Executes an action and closes the overlay. */
+async function runAction(key: ActionKey, template: SnippetInfo): Promise<void> {
+  switch (key) {
+    case "copy":
+      await api.copyText(template.content);
+      await closeAnimated();
+      break;
+    case "paste":
+      await api.pasteSnippet(template.content);
+      await closeAnimated();
+      break;
+    case "edit":
+      await api.openPath(template.path);
+      await closeAnimated();
+      break;
+    case "adapt":
+      // The modal is a separate window; hide the overlay instantly.
+      await api.openModal(template.name, template.content);
+      session.closing = true;
+      await api.hideOverlay();
+      break;
+  }
+}
+
+/** Suck-in close animation followed by hiding the window. */
+export async function closeAnimated(): Promise<void> {
+  if (session.closing) return;
+  session.closing = true;
+  try {
+    await suckInClose(session.dom!);
+  } finally {
+    await api.hideOverlay();
+    resetAfterHide(session.dom!);
+    apply(initialModel(session.model.count));
+    session.closing = false;
+  }
+}
+
+/** Reloads templates/config and rebuilds the static DOM. */
+export async function refreshState(): Promise<void> {
+  const state: AppStateDto = await api.getAppState();
+  session.templates = state.templates.map((t) => ({ name: t.name, path: t.path, content: t.content }));
+  const root = document.getElementById("overlay-root") as HTMLDivElement;
+  session.dom = buildOverlay(root, session.templates);
+  session.model = initialModel(session.templates.length);
+  apply(session.model);
+  wireClicks();
+  await hubBloom(session.dom);
+  session.dom.hub.classList.add("hub--hidden");
+}
+
+/** Wires mouse clicks (only fire when native input is enabled). */
+function wireClicks(): void {
+  const dom = session.dom!;
+  dom.hub.addEventListener("click", () => {
+    if (session.model.phase === "hub") expandToSnippets();
+    else retractOne();
+  });
+  dom.pills.forEach(({ pill }, i) => {
+    pill.addEventListener("click", () => {
+      if (session.model.phase === "hub" || session.animating) return;
+      if (session.model.phase === "actions" && session.model.selected === i) {
+        retractOne();
+        return;
+      }
+      apply({ ...session.model, selected: i });
+      expandToActions();
+    });
+  });
+  dom.actionPills.forEach(({ pill }, k) => {
+    pill.addEventListener("click", () => {
+      const t = session.templates[session.model.selected];
+      if (t) void runAction(ACTION_KEYS[k], t);
+    });
+  });
+  dom.root.addEventListener("click", (e) => {
+    // Click on empty canvas space closes the overlay (legacy behaviour).
+    const target = e.target as HTMLElement;
+    if (target.closest(".hit")) return;
+    void closeAnimated();
+  });
+}
+
+/** Entry point. */
+export async function main(): Promise<void> {
+  await refreshState();
+
+  // Navigation keyboard input.
+  document.addEventListener("keydown", (e) => {
+    if (session.closing || session.animating) return;
+    switch (e.key) {
+      case "ArrowUp":
+        navUp();
+        break;
+      case "ArrowDown":
+        navDown();
+        break;
+      case "ArrowLeft":
+        retractOne();
+        break;
+      case "ArrowRight":
+      case "Enter":
+        if (session.model.phase === "snippets") expandToActions();
+        else if (session.model.phase === "hub") expandToSnippets();
+        break;
+      case " ":
+        if (session.model.phase === "hub") expandToSnippets();
+        else if (session.model.phase === "snippets") expandToActions();
+        break;
+      case "Escape":
+        void closeAnimated();
+        break;
+      default:
+        if (session.model.phase === "actions" && /^[1-4]$/.test(e.key)) {
+          const t = session.templates[session.model.selected];
+          if (t) void runAction(ACTION_KEYS[Number(e.key) - 1], t);
+        }
+    }
+  });
+
+  document.addEventListener(
+    "wheel",
+    (e) => {
+      if (e.deltaY < 0) navUp();
+      else navDown();
+    },
+    { passive: true },
+  );
+
+  // Focus/blur lifecycle.
+  await listen("tauri://focus", async () => {
+    if (session.closing) return;
+    await refreshState();
+  });
+  await listen("tauri://blur", () => {
+    // Modal opening also blurs the overlay; hide instantly without animation.
+    if (session.dom) {
+      session.closing = true;
+      void api.hideOverlay().then(() => {
+        resetAfterHide(session.dom!);
+        apply(initialModel(session.templates.length));
+        session.closing = false;
+      });
+    }
+  });
+  await listen("request-close", () => {
+    void closeAnimated();
+  });
+
+  // Cursor hit-test protocol: enable native input only over interactive UI.
+  let hit = false;
+  await listen<{ x: number; y: number }>("cursor-pos", ({ payload }) => {
+    if (!session.dom || session.closing) return;
+    hit = isHit(payload.x, payload.y);
+    if (hit !== session.lastHit) {
+      session.lastHit = hit;
+      void api.setOverlayInput(hit);
+    }
+  });
+}
+
+/** Hit-test helper over the canvas coordinates (kept exported for tests). */
+export function isHit(x: number, y: number): boolean {
+  if (session.model.phase === "hub") {
+    return isHubClick(x, y);
+  }
+  if (isHubClick(x, y)) return true;
+  for (let slot = 0; slot < SNIPPET.visible; slot++) {
+    const idx = session.model.scroll + slot;
+    if (idx < session.model.count && isSnippetClick(x, y, slot, session.model.scroll)) return true;
+  }
+  if (session.model.phase === "actions") {
+    const fromY = slotY(session.model.selected, session.model.scroll);
+    for (let k = 0; k < ACTION_KEYS.length; k++) {
+      if (isActionClick(x, y, fromY, k)) return true;
+    }
+  }
+  return false;
+}
+
+main().catch((e) => console.error("overlay init failed", e));

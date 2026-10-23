@@ -1,0 +1,258 @@
+/* Overlay window: dark pills, white borders, GPU transitions.
+   Geometry mirrors the legacy Python overlay. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  font-family: "Bahnschrift", "Segoe UI", sans-serif;
+}
+
+#overlay-root {
+  position: relative;
+  width: 820px;
+  height: 580px;
+}
+
+/* ---------- Hub ---------- */
+
+.hub {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  cursor: pointer;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.18));
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.3, 1),
+    opacity 0.25s ease-out,
+    filter 0.2s;
+  transform-origin: 40px 40px;
+  z-index: 10;
+}
+
+.hub:hover {
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.35));
+}
+
+.hub--hidden {
+  transform: scale(0.15);
+  opacity: 0;
+}
+
+.hub--bloom {
+  transform: scale(0.2);
+  opacity: 0;
+  transition: none;
+}
+
+.hub--sucked {
+  transform: scale(0) !important;
+  opacity: 1;
+  transition:
+    transform 0.38s cubic-bezier(0.55, 0, 0.85, 0.36),
+    opacity 0.3s ease-in;
+}
+
+/* Collapsing energy ring ahead of the hub during the suck-in. */
+.ring {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  margin: -2px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+
+.ring--active {
+  animation: ring-collapse 0.38s cubic-bezier(0.55, 0, 0.85, 0.36) forwards;
+}
+
+@keyframes ring-collapse {
+  0% {
+    transform: scale(14);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* ---------- SVG lines & brackets ---------- */
+
+svg.lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.line {
+  fill: none;
+  stroke: rgba(90, 90, 110, 0.7);
+  stroke-width: 2.2;
+  transition:
+    d 0.28s ease-out,
+    opacity 0.28s ease-out,
+    stroke 0.2s;
+}
+
+.line.selected {
+  stroke: #ffffff;
+  stroke-width: 3.4;
+}
+
+.line.action {
+  stroke: rgba(80, 80, 95, 0.7);
+}
+
+.line.hidden,
+.dot.hidden,
+.bracket.hidden {
+  opacity: 0;
+}
+
+.dot {
+  fill: rgba(90, 90, 110, 0.7);
+  transition:
+    cy 0.28s ease-out,
+    opacity 0.28s ease-out,
+    fill 0.2s;
+}
+
+.dot.selected {
+  fill: #ffffff;
+  r: 4;
+}
+
+.dot.action {
+  fill: rgba(80, 80, 95, 0.7);
+}
+
+.bracket {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.4;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.phase-snippets .bracket,
+.phase-actions .bracket,
+.expanded ~ svg .bracket,
+svg .bracket.shown {
+  opacity: 1;
+}
+
+.phase-snippets svg .bracket,
+.phase-actions svg .bracket {
+  opacity: 1;
+}
+
+/* ---------- Pills ---------- */
+
+.pill {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 15px;
+  color: rgb(175, 175, 190);
+  background: rgba(20, 20, 25, 0.97);
+  border: 2px solid rgb(70, 70, 85, 0.9);
+  opacity: 0;
+  transform: translateX(35px);
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    left 0.28s ease-out,
+    top 0.32s cubic-bezier(0.3, 0.7, 0.3, 1),
+    transform 0.32s cubic-bezier(0.2, 0.8, 0.3, 1),
+    opacity 0.32s ease-out,
+    border-color 0.2s,
+    background 0.2s;
+  z-index: 5;
+  white-space: nowrap;
+}
+
+.pill.visible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.pill.selected {
+  background: rgb(34, 34, 44);
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.12);
+}
+
+.pill:hover {
+  border-color: #ffffff;
+}
+
+.chev {
+  margin-left: auto;
+  padding-left: 12px;
+  font-weight: bold;
+  color: rgb(100, 100, 115);
+}
+
+.pill.selected .chev {
+  color: #ffffff;
+}
+
+.pill.snippet {
+  width: 285px;
+  height: 42px;
+}
+
+.pill.action {
+  width: 210px;
+  height: 40px;
+  transform: translateX(30px);
+}
+
+.pill.action.visible {
+  transform: translateX(0);
+}
+
+/* ---------- Closing state ---------- */
+
+#overlay-root.closing .pill {
+  opacity: 0 !important;
+  transition:
+    opacity 0.22s ease-in,
+    transform 0.22s ease-in;
+}
+
+#overlay-root.closing .line,
+#overlay-root.closing .dot,
+#overlay-root.closing .bracket {
+  opacity: 0 !important;
+  transition: opacity 0.22s ease-in;
+}
+
+/* Expanded-state hooks used by anim.ts */
+
+.phase-snippets .pill.snippet.visible,
+.phase-actions .pill.snippet.visible {
+  /* visibility already handled above; kept for clarity */
+}
+
+#overlay-root:not(.phase-hub) .pill.snippet.visible {
+  opacity: 1;
+}
