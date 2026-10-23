@@ -41,9 +41,18 @@ Prerequisites: [Rust](https://rustup.rs) 1.78+, Node.js 20+, and the
 [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
 
 ```bash
-cd src/frontend && npm install   # frontend toolchain
-npm run dev                      # frontend dev server
-cargo tauri dev                  # desktop shell (from src/desktop)
+cd src/frontend
+npm install
+npm run app:dev      # starts the Vite dev server + the desktop app
+```
+
+Useful frontend scripts (run inside `src/frontend`):
+
+```bash
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm test             # vitest (unit tests live in tests/frontend/)
+npm run app:build    # production desktop bundle
 ```
 
 ## License
