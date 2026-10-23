@@ -1,27 +1,41 @@
 /**
- * Adaptation modal entry point: source selection (phase 1), folder/file
- * handling (phase 2) and the AI result with refinement chat (phase 3).
+ * Adaptation modal entry point.
+ *
+ * Modern dark UI driven by inline SVG icons: phase 1 - source selection,
+ * phase 2 - folder/file pickers, phase 3 - editable AI result with a
+ * refinement chat. The frame is natively draggable via `startDragging`.
  */
 
-import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type ChatMessage, type ModalInit, type SpecDto } from "../shared/ipc";
+import { icon, type IconName } from "./icons";
 
 /** Modal phases. */
 type Phase = "select" | "folder" | "file" | "spec" | "result";
 
-/** Runtime session. */
-const session = {
-  init: null as ModalInit | null,
-  phase: "select" as Phase,
-  spec: null as SpecDto | null,
+/** Runtime session state. */
+interface Session {
+  init: ModalInit | null;
+  phase: Phase;
+  spec: SpecDto | null;
+  specIsFolder: boolean;
+  chat: ChatMessage[];
+  busy: boolean;
+  root: HTMLDivElement;
+}
+
+const session: Session = {
+  init: null,
+  phase: "select",
+  spec: null,
   specIsFolder: false,
-  chat: [] as ChatMessage[],
+  chat: [],
   busy: false,
   root: null as unknown as HTMLDivElement,
 };
 
-/** Short helpers. */
+/** Typed element factory. */
 const el = <K extends keyof HTMLElementTagNameMap>(
   tag: K,
   cls?: string,
@@ -33,12 +47,43 @@ const el = <K extends keyof HTMLElementTagNameMap>(
   return e;
 };
 
-/** Clears the content area and returns it. */
+/** Builds a button with an optional leading SVG icon and a text label. */
+function btn(cls: string, iconName: IconName | null, label: string): HTMLButtonElement {
+  const b = el("button", `btn ${cls}`);
+  b.innerHTML = `${iconName ? icon(iconName, 15) : ""}<span>${label}</span>`;
+  return b;
+}
+
+/** Swaps a button's content to a spinner state. */
+function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
+  const original = btnEl.innerHTML;
+  btnEl.classList.add("loading");
+  btnEl.innerHTML = `<span class="spinner"></span><span>${label}</span>`;
+  return () => {
+    btnEl.classList.remove("loading");
+    btnEl.innerHTML = original;
+  };
+}
+
+/** Clears the content area and returns a fresh frame with the close button. */
 function clear(): HTMLDivElement {
   session.root.innerHTML = "";
   const frame = el("div", "frame");
+  const closeBtn = el("button", "icon-btn");
+  closeBtn.innerHTML = icon("x", 14);
+  closeBtn.title = "Закрыть (Esc)";
+  closeBtn.addEventListener("click", () => close());
+  frame.appendChild(closeBtn);
   session.root.appendChild(frame);
   return frame;
+}
+
+/** Adds a centered (draggable) prompt row with an optional leading icon. */
+function promptRow(frame: HTMLDivElement, iconName: IconName | null, text: string): void {
+  const p = el("div", "prompt");
+  p.setAttribute("data-drag", "");
+  p.innerHTML = `${iconName ? `<span class="p-ico">${icon(iconName, 15)}</span>` : ""}<span>${text}</span>`;
+  frame.appendChild(p);
 }
 
 /** Applies the red error border state for 3.5 s. */
@@ -48,56 +93,75 @@ async function errorBorder(): Promise<void> {
   session.root.classList.remove("error");
 }
 
-/** Closes the modal. */
+/** Closes the modal window. */
 function close(): void {
   void api.closeModal();
 }
 
-/** Renders phase 1: centered prompt + two animated icon halves. */
+// ==========================================
+// PHASE 1: SOURCE SELECTION
+// ==========================================
+
+/** Renders phase 1: kicker + centered prompt + two hover-animated halves. */
 function renderSelect(): void {
   session.phase = "select";
   const frame = clear();
 
-  const prompt = el("div", "prompt", "Выберите источник");
-  frame.appendChild(prompt);
+  const kicker = el("div", "kicker");
+  kicker.textContent = `Адаптация · ${session.init?.snippet_name ?? ""}`;
+  kicker.setAttribute("data-drag", "");
+  frame.appendChild(kicker);
+
+  promptRow(frame, null, "Выберите источник");
 
   const row = el("div", "halves");
-  const left = el("div", "half hit2");
-  left.innerHTML = `<div class="big-ico">📁</div><div class="cap">Папка проекта</div>`;
-  const right = el("div", "half hit2");
-  right.innerHTML = `<div class="big-ico">📄</div><div class="cap">Файл спецификации</div>`;
-  row.append(left, right);
+  const halves: Array<{ ic: IconName; title: string; sub: string; go: () => void }> = [
+    { ic: "folder", title: "Папка проекта", sub: "Автопоиск в docs/ или корне", go: () => chooseFolder() },
+    { ic: "file", title: "Файл спецификации", sub: "Прямой выбор .md, .txt, .json", go: () => chooseFile() },
+  ];
+  for (const h of halves) {
+    const b = el("button", "half");
+    b.innerHTML =
+      `<span class="tile">${icon(h.ic, 22)}</span>` +
+      `<span class="half-title">${h.title}</span>` +
+      `<span class="half-sub">${h.sub}</span>`;
+    b.addEventListener("click", h.go);
+    row.appendChild(b);
+  }
   frame.appendChild(row);
-
-  left.addEventListener("click", () => chooseFolder());
-  right.addEventListener("click", () => chooseFile());
   requestAnimationFrame(() => frame.classList.add("shown"));
 }
 
-/** Smoothly enters phase 2 (folder) and auto-opens the directory picker. */
+// ==========================================
+// PHASE 2: FOLDER / FILE
+// ==========================================
+
+/** Enters the folder phase and auto-opens the directory picker. */
 function chooseFolder(): void {
   if (session.busy) return;
   session.phase = "folder";
   const frame = clear();
   frame.classList.add("shown");
-  frame.appendChild(el("div", "prompt", "📁 Папка проекта"));
+  promptRow(frame, "folder", "Папка проекта");
+
   const area = el("div", "area");
-  const btn = el("button", "pill dark", "📂 Открыть диалог выбора");
-  btn.addEventListener("click", () => void pickFolderFlow());
-  const back = el("button", "pill ghost", "← Назад");
+  const pick = btn("btn-dark", "folder", "Открыть диалог выбора");
+  pick.addEventListener("click", () => void pickFolderFlow());
+  const back = btn("btn-ghost", "arrow-left", "Назад");
   back.addEventListener("click", renderSelect);
-  area.append(btn, back);
+  area.append(pick, back);
   frame.appendChild(area);
+
   setTimeout(() => void pickFolderFlow(), 180);
 }
 
-/** Folder picker flow: dialog -> spec lookup -> spec card. */
+/** Folder flow: dialog -> spec lookup -> status card. */
 async function pickFolderFlow(): Promise<void> {
   if (session.busy) return;
   session.busy = true;
   try {
     const folder = await api.pickFolder();
-    if (!folder) return; // canceled -> stay in the folder phase
+    if (!folder) return;
     const spec = await api.loadSpecFromFolder(folder);
     session.spec = spec;
     renderSpec(spec, true);
@@ -106,24 +170,28 @@ async function pickFolderFlow(): Promise<void> {
   }
 }
 
-/** Smoothly enters phase 2 (file) with the drop zone. */
+/** Enters the file phase with the drop zone. */
 function chooseFile(): void {
   if (session.busy) return;
   session.phase = "file";
   const frame = clear();
   frame.classList.add("shown");
-  frame.appendChild(el("div", "prompt", "📄 Файл спецификации"));
+  promptRow(frame, "file", "Файл спецификации");
+
   const area = el("div", "area");
-  const zone = el("div", "dropzone hit2");
-  zone.innerHTML = `<div class="mid-ico">📂</div><div class="dz-title">Drag &amp; drop or select</div><div class="dz-sub">Нажмите для выбора файла (.md, .txt, .json)</div>`;
+  const zone = el("div", "dropzone");
+  zone.innerHTML =
+    `<span class="dz-ico">${icon("file", 20)}</span>` +
+    `<span class="dz-title">Перетащите файл или нажмите</span>` +
+    `<span class="dz-sub">.md, .txt, .json, .yaml</span>`;
   zone.addEventListener("click", () => void pickFileFlow());
-  const back = el("button", "pill ghost", "← Назад");
+  const back = btn("btn-ghost", "arrow-left", "Назад");
   back.addEventListener("click", renderSelect);
   area.append(zone, back);
   frame.appendChild(area);
 }
 
-/** File picker flow: dialog -> validation -> spec card. */
+/** File flow: dialog -> validation -> status card. */
 async function pickFileFlow(): Promise<void> {
   if (session.busy) return;
   session.busy = true;
@@ -138,80 +206,77 @@ async function pickFileFlow(): Promise<void> {
   }
 }
 
-/** Renders the spec status card with the adapt action (or error + retry). */
+// ==========================================
+// SPEC STATUS + ADAPT
+// ==========================================
+
+/** Renders the specification status card and the adapt action. */
 function renderSpec(spec: SpecDto, isFolder: boolean): void {
   session.phase = "spec";
   session.specIsFolder = isFolder;
   const frame = clear();
   frame.classList.add("shown");
-  frame.appendChild(el("div", "prompt", isFolder ? "📁 Папка проекта" : "📄 Файл спецификации"));
+  promptRow(frame, isFolder ? "folder" : "file", isFolder ? "Папка проекта" : "Файл спецификации");
+
   const area = el("div", "area");
 
-  const card = el("div", spec.found ? "spec ok" : "spec bad");
-  const title = el("div", "spec-title");
+  const card = el("div", `spec ${spec.found ? "ok" : "bad"}`);
+  const dot = el("span", `s-dot ${spec.found ? "ok" : "bad"}`);
+  const body = el("div", "s-body");
+  const title = el("div", "s-title");
   title.textContent = spec.found
     ? (spec.path ?? "").split(/[\\/]/).pop() || spec.path
     : "Ошибка";
-  const sub = el("div", "spec-sub mono");
+  const sub = el("div", "s-sub mono");
   sub.textContent = spec.found
-    ? `${(spec.content.length / 1024).toFixed(1)} КБ · ✓ Файл спецификации подходит`
-    : (spec.error ?? "Неизвестная ошибка");
-  card.append(title, sub);
+    ? `${(spec.content.length / 1024).toFixed(1)} КБ · готово к адаптации`
+    : spec.error || "Неизвестная ошибка";
+  body.append(title, sub);
+  card.append(dot, body);
   area.appendChild(card);
 
   if (spec.found) {
-    const adapt = el("button", "pill primary", "🚀 Адаптировать");
+    const adapt = btn("btn-primary", "sparkle", "Адаптировать");
     adapt.addEventListener("click", () => void adaptFlow(adapt));
     area.appendChild(adapt);
   } else {
-    session.root.classList.add("error");
-    const retry = el("button", "pill dark", "Повторить выбор");
-    retry.addEventListener("click", () => {
-      session.root.classList.remove("error");
-      if (isFolder) chooseFolder();
-      else chooseFile();
-    });
+    const retry = btn("btn-dark", isFolder ? "folder" : "file", "Повторить выбор");
+    retry.addEventListener("click", () => (isFolder ? chooseFolder() : chooseFile()));
     area.appendChild(retry);
   }
 
-  const back = el("button", "pill ghost", "← Сменить источник");
-  back.addEventListener("click", () => {
-    session.root.classList.remove("error");
-    renderSelect();
-  });
+  const back = btn("btn-ghost", "arrow-left", "Сменить источник");
+  back.addEventListener("click", renderSelect);
   area.appendChild(back);
   frame.appendChild(area);
 }
 
 /** Runs the AI adaptation with a spinner, then shows the result phase. */
-async function adaptFlow(button: HTMLElement): Promise<void> {
+async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
   if (session.busy || !session.spec?.found) return;
+  const spec = session.spec;
   session.busy = true;
-  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-  let i = 0;
-  const spin = setInterval(() => {
-    button.textContent = `${frames[i++ % frames.length]} Адаптация нейросетью...`;
-  }, 80);
-  button.classList.add("disabled");
-
+  const restore = setBusy(adapt, "Адаптация…");
   try {
-    const result = await api.adaptTemplate(session.spec.content, session.init?.snippet_content ?? "");
+    const result = await api.adaptTemplate(spec.content, session.init?.snippet_content ?? "");
     session.chat = [];
     renderResult(result);
   } catch {
-    button.textContent = "✕ Ошибка";
+    adapt.innerHTML = `${icon("warning", 15)}<span>Ошибка</span>`;
     session.root.classList.add("error");
     await errorBorder();
-    renderSpec(session.spec, session.specIsFolder);
-    button.textContent = "🚀 Адаптировать";
+    renderSpec(spec, session.specIsFolder);
   } finally {
-    clearInterval(spin);
-    button.classList.remove("disabled");
+    restore();
     session.busy = false;
   }
 }
 
-/** Renders phase 3: editable result + refinement chat + actions. */
+// ==========================================
+// PHASE 3: RESULT + REFINEMENT
+// ==========================================
+
+/** Renders the editable result with the refinement chat bar and actions. */
 function renderResult(text: string): void {
   session.phase = "result";
   const frame = clear();
@@ -219,9 +284,11 @@ function renderResult(text: string): void {
   session.root.classList.remove("error");
 
   const head = el("div", "result-head");
-  const label = el("div", "result-label", "2. Адаптированный результат (можно редактировать):");
-  const tag = el("div", "mono muted", `⚡ ${session.init?.snippet_name ?? ""}`);
-  head.append(label, tag);
+  head.setAttribute("data-drag", "");
+  const label = el("div", "result-label", "Адаптированный результат");
+  const chip = el("span", "chip mono");
+  chip.innerHTML = `${icon("zap", 11)}<span>${session.init?.snippet_name ?? ""}</span>`;
+  head.append(label, chip);
   frame.appendChild(head);
 
   const ta = document.createElement("textarea");
@@ -233,11 +300,8 @@ function renderResult(text: string): void {
   const chat = el("div", "chat");
   const input = document.createElement("input");
   input.className = "chat-input";
-  input.placeholder = "💬 Что изменить? (например: сделай короче, добавь типизацию...)";
-  input.addEventListener("focus", () => {
-    if (input.value.startsWith("💬")) input.value = "";
-  });
-  const send = el("button", "pill dark", "Отправить");
+  input.placeholder = "Что изменить? Например: сделай короче, добавь типизацию…";
+  const send = btn("btn-dark", "send", "Отправить");
   send.addEventListener("click", () => void refineFlow(input, send, ta));
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") void refineFlow(input, send, ta);
@@ -246,69 +310,87 @@ function renderResult(text: string): void {
   frame.appendChild(chat);
 
   const footer = el("div", "footer");
-  const accept = el("button", "pill primary", "✓ Принять и Вставить");
+  const accept = btn("btn-primary", "check", "Принять и вставить");
   accept.addEventListener("click", () => {
     const final = ta.value.trim();
     if (!final || !session.init) return;
-    void api.saveHistory(session.init.snippet_name, final).then(() => api.pasteSnippet(final)).then(close);
+    void api
+      .saveHistory(session.init.snippet_name, final)
+      .then(() => api.pasteSnippet(final))
+      .then(close);
   });
-  const copy = el("button", "pill dark", "📋 Скопировать");
+  const copy = btn("btn-dark", "copy", "Скопировать");
   copy.addEventListener("click", () => {
     const final = ta.value.trim();
     if (!final || !session.init) return;
-    void api.saveHistory(session.init.snippet_name, final).then(() => api.copyText(final)).then(close);
+    void api
+      .saveHistory(session.init.snippet_name, final)
+      .then(() => api.copyText(final))
+      .then(close);
   });
-  const back = el("button", "pill ghost", "← Сменить источник");
+  const back = btn("btn-ghost", "arrow-left", "Сменить источник");
   back.addEventListener("click", renderSelect);
   footer.append(accept, copy, back);
   frame.appendChild(footer);
 }
 
 /** Sends the refinement prompt and swaps the result text. */
-async function refineFlow(input: HTMLInputElement, send: HTMLElement, ta: HTMLTextAreaElement): Promise<void> {
+async function refineFlow(
+  input: HTMLInputElement,
+  send: HTMLButtonElement,
+  ta: HTMLTextAreaElement,
+): Promise<void> {
   const prompt = input.value.trim();
   const spec = session.spec;
-  if (!prompt || prompt.startsWith("💬") || session.busy || !spec?.found) return;
+  if (!prompt || session.busy || !spec?.found) return;
   session.busy = true;
-  send.classList.add("disabled");
-  send.textContent = "⠋ Думает...";
-  session.chat.push({ role: "user", content: `УТОЧНЕНИЕ: ${prompt}\n\nТЕКУЩИЙ ВАРИАНТ:\n${ta.value}` });
+  const restore = setBusy(send, "Думает…");
+  session.chat.push({
+    role: "user",
+    content: `УТОЧНЕНИЕ: ${prompt}\n\nТЕКУЩИЙ ВАРИАНТ:\n${ta.value}`,
+  });
   try {
     const res = await api.refineResult(session.chat);
     session.chat.push({ role: "assistant", content: res });
     ta.value = res;
     input.value = "";
   } catch {
-    send.textContent = "✕ Ошибка";
     session.root.classList.add("error");
     await errorBorder();
-    renderSpec(spec, session.specIsFolder);
   } finally {
-    send.classList.remove("disabled");
-    if (send.textContent?.includes("Думает")) send.textContent = "Отправить";
+    restore();
     session.busy = false;
   }
 }
 
-/** Entry point. */
+// ==========================================
+// ENTRY POINT
+// ==========================================
+
+/** Entry point: loads the payload, builds phase 1, wires global handlers. */
 export async function main(): Promise<void> {
   session.root = document.getElementById("modal-root") as HTMLDivElement;
   const frame = clear();
-  frame.appendChild(el("div", "prompt muted", "Загрузка..."));
+  frame.appendChild(el("div", "loading muted", "Загрузка…"));
 
   session.init = await api.getModalInit();
   if (!session.init) {
-    // No payload (e.g. hot reload) - nothing to adapt, close silently.
     close();
     return;
   }
 
   renderSelect();
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") close();
+    if (e.key === "Escape" && !session.busy) close();
   });
-  await listen("tauri://blur", () => {
-    /* keep open: the modal is a standalone window */
+
+  // Native window dragging from designated (non-interactive) areas.
+  document.addEventListener("pointerdown", (e) => {
+    const t = e.target as HTMLElement;
+    if (t.closest("button, input, textarea")) return;
+    if (!t.closest("[data-drag]")) return;
+    void getCurrentWindow().startDragging();
   });
 }
 
