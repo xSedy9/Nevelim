@@ -286,13 +286,16 @@ pub fn hide_overlay(app: AppHandle) {
 }
 
 /// Opens (or focuses) the adaptation modal for the given snippet.
+///
+/// Async on purpose: window creation from a *sync* command runs on the main
+/// thread and deadlocks the whole event loop on Windows.
 #[tauri::command]
-pub fn open_modal(
+pub async fn open_modal(
     app: AppHandle,
     state: State<'_, AppState>,
     snippet_name: String,
     snippet_content: String,
-) {
+) -> Result<(), String> {
     *state.modal_init.lock().unwrap() = Some(ModalInit {
         snippet_name,
         snippet_content,
@@ -300,9 +303,9 @@ pub fn open_modal(
     if let Some(existing) = app.get_webview_window("modal") {
         let _ = existing.show();
         let _ = existing.set_focus();
-        return;
+        return Ok(());
     }
-    let _ = tauri::WebviewWindowBuilder::new(&app, "modal", WebviewUrl::App("modal.html".into()))
+    tauri::WebviewWindowBuilder::new(&app, "modal", WebviewUrl::App("modal.html".into()))
         .title("Quick Snippets")
         .inner_size(476.0, 371.0)
         .transparent(true)
@@ -312,7 +315,12 @@ pub fn open_modal(
         .always_on_top(true)
         .resizable(false)
         .center()
-        .build();
+        .build()
+        .map(|_| ())
+        .map_err(|e| {
+            eprintln!("[modal] failed to open: {e}");
+            e.to_string()
+        })
 }
 
 /// Closes the adaptation modal window.

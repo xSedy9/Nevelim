@@ -122,11 +122,24 @@ async function runAction(key: ActionKey, template: SnippetInfo): Promise<void> {
       await closeAnimated();
       break;
     case "adapt":
-      // The modal is a separate window; hide the overlay instantly.
+      // The modal is a separate window and steals focus: the blur handler
+      // starts hiding, hideAndReset guarantees the overlay is hidden and the
+      // closing flag is released even if no blur event arrives.
       await api.openModal(template.name, template.content);
-      session.closing = true;
-      await api.hideOverlay();
+      await hideAndReset();
       break;
+  }
+}
+
+/** Hides the window and resets the UI, always releasing the closing flag. */
+async function hideAndReset(): Promise<void> {
+  session.closing = true;
+  try {
+    await api.hideOverlay();
+  } finally {
+    if (session.dom) resetAfterHide(session.dom);
+    apply(initialModel(session.templates.length));
+    session.closing = false;
   }
 }
 
@@ -137,10 +150,7 @@ export async function closeAnimated(): Promise<void> {
   try {
     await suckInClose(session.dom!);
   } finally {
-    await api.hideOverlay();
-    resetAfterHide(session.dom!);
-    apply(initialModel(session.model.count));
-    session.closing = false;
+    await hideAndReset();
   }
 }
 
@@ -247,14 +257,9 @@ export async function main(): Promise<void> {
     await refreshState();
   });
   await listen("tauri://blur", () => {
-    // Modal opening also blurs the overlay; hide instantly without animation.
+    // Modal opening also blurs the overlay; hide without animation.
     if (session.dom) {
-      session.closing = true;
-      void api.hideOverlay().then(() => {
-        resetAfterHide(session.dom!);
-        apply(initialModel(session.templates.length));
-        session.closing = false;
-      });
+      void hideAndReset();
     }
   });
   await listen("request-close", () => {

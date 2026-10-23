@@ -159,6 +159,17 @@ pub fn toggle(app: &AppHandle) {
     let visible = *state.overlay_visible.lock().unwrap();
     if visible {
         let _ = app.emit_to("overlay", "request-close", ());
+        // Fallback: if the frontend never animates+hides (dead webview),
+        // force-hide so the hotkey always recovers.
+        let handle = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(700));
+            let still_visible = *handle.state::<AppState>().overlay_visible.lock().unwrap();
+            if still_visible {
+                eprintln!("[overlay] frontend did not hide in time, force-hiding");
+                hide(&handle);
+            }
+        });
     } else {
         show_at_cursor(app);
     }
