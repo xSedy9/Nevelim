@@ -1,0 +1,12 @@
+{
+  "hotkey": "alt+shift+v",
+  "provider": "gemini",
+  "gemini_api_key": "",
+  "gemini_model": "gemini-2.5-flash",
+  "openai_api_key": "",
+  "openai_api_base": "https://api.openai.com/v1",
+  "openai_model": "gpt-4o-mini",
+  "openrouter_api_key": "",
+  "openrouter_model": "google/gemini-2.5-flash",
+  "paste_automatically": true
+}

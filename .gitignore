@@ -1,0 +1,18 @@
+# Node / frontend
+node_modules/
+dist/
+coverage/
+*.local
+.vite/
+
+# Rust / Tauri
+target/
+src/desktop/gen/
+
+# Logs & OS junk
+*.log
+.DS_Store
+Thumbs.db
+
+# Local config with real API keys (use config.example.json)
+config.json
