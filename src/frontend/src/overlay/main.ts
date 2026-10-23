@@ -239,8 +239,10 @@ export async function main(): Promise<void> {
     { passive: true },
   );
 
-  // Focus/blur lifecycle.
-  await listen("tauri://focus", async () => {
+  // Show/hide lifecycle. "overlay-shown" is emitted by the Rust side right
+  // after the window becomes visible (more reliable than WebView2 focus
+  // events for hidden->shown transitions).
+  await listen("overlay-shown", async () => {
     if (session.closing) return;
     await refreshState();
   });

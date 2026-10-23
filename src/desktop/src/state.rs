@@ -25,4 +25,6 @@ pub struct AppState {
     pub modal_init: Mutex<Option<ModalInit>>,
     /// Last input-enabled flag sent to the OS, to avoid redundant syscall churn.
     pub overlay_input_enabled: Mutex<bool>,
+    /// Timestamp of the last hotkey toggle, for auto-repeat debouncing.
+    pub last_toggle: Mutex<Option<std::time::Instant>>,
 }

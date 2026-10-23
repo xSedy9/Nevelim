@@ -120,6 +120,9 @@ pub fn show_at_cursor(app: &AppHandle) {
     position_at_cursor(app, &win);
     let _ = win.show();
     let _ = win.set_focus();
+    // Deterministic "now visible" signal for the frontend (WebView2 focus
+    // events are not always delivered reliably for hidden->shown windows).
+    let _ = app.emit_to("overlay", "overlay-shown", ());
 }
 
 /// Hides the overlay immediately (no animation; the frontend animates first).
@@ -133,10 +136,27 @@ pub fn hide(app: &AppHandle) {
     *state.overlay_input_enabled.lock().unwrap() = false;
 }
 
+/// Debounce window for the hotkey toggle: keyboard auto-repeat re-fires the
+/// global shortcut while the combo is held, which must not close the overlay
+/// right after it opened (mirrors the legacy 450 ms debounce).
+pub const TOGGLE_DEBOUNCE_MS: u64 = 450;
+
 /// Hotkey entry point: hides a visible overlay (via animated frontend close)
-/// or shows it at the cursor.
+/// or shows it at the cursor. Auto-repeat presses within
+/// [`TOGGLE_DEBOUNCE_MS`] are ignored.
 pub fn toggle(app: &AppHandle) {
-    let visible = *app.state::<AppState>().overlay_visible.lock().unwrap();
+    let state = app.state::<AppState>();
+    let now = std::time::Instant::now();
+    {
+        let mut last = state.last_toggle.lock().unwrap();
+        if let Some(t) = *last {
+            if now.duration_since(t) < std::time::Duration::from_millis(TOGGLE_DEBOUNCE_MS) {
+                return;
+            }
+        }
+        *last = Some(now);
+    }
+    let visible = *state.overlay_visible.lock().unwrap();
     if visible {
         let _ = app.emit_to("overlay", "request-close", ());
     } else {
