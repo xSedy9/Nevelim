@@ -39,11 +39,14 @@ export function clampScroll(m: OverlayModel): OverlayModel {
   return scroll === m.scroll ? m : { ...m, scroll };
 }
 
-/** Moves the selection up. Returns the same model when already at the top. */
+/** Moves the selection up (or the action row up in the actions phase). Returns the same model when already at the top. */
 export function moveUp(m: OverlayModel): OverlayModel {
-  if (m.phase === "hub" || m.selected <= 0) return m;
-  const next = clampScroll({ ...m, selected: m.selected - 1 });
-  return next;
+  if (m.phase === "hub") return m;
+  if (m.phase === "actions") {
+    return m.actionSelected <= 0 ? m : { ...m, actionSelected: m.actionSelected - 1 };
+  }
+  if (m.selected <= 0) return m;
+  return clampScroll({ ...m, selected: m.selected - 1 });
 }
 
 /** Moves the selection down (or expands from the hub). Returns the same model when at the bottom. */

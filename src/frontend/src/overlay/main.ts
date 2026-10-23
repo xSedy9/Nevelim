@@ -16,15 +16,7 @@ import {
   type OverlayModel,
 } from "./state";
 import { buildOverlay, update, type OverlayDom, type SnippetInfo } from "./render";
-import {
-  expandActions,
-  expandSnippets,
-  hubBloom,
-  resetAfterHide,
-  retractActions,
-  retractSnippets,
-  suckInClose,
-} from "./anim";
+import { expandActions, expandSnippets, hubBloom, resetAfterHide, sleep, suckInClose } from "./anim";
 
 /** Action keys in selection order. */
 const ACTION_KEYS = ["copy", "paste", "edit", "adapt"] as const;
@@ -82,10 +74,22 @@ function retractOne(): void {
   const next = retract(session.model);
   if (!next) return;
   void animate(async () => {
-    if (next.phase === "snippets") await retractActions(session.dom!);
-    else await retractSnippets(session.dom!);
+    // Apply first: CSS transitions start moving/fading immediately, the sleep
+    // only keeps input locked until the motion settles.
     apply(next);
+    if (next.phase === "snippets") await sleep(300);
+    else await sleep(260);
   });
+}
+
+/** Executes the currently selected action (Enter / Space / click). */
+function onConfirm(): void {
+  if (session.model.phase === "snippets") expandToActions();
+  else if (session.model.phase === "hub") expandToSnippets();
+  else if (session.model.phase === "actions") {
+    const t = session.templates[session.model.selected];
+    if (t) void runAction(ACTION_KEYS[session.model.actionSelected], t);
+  }
 }
 
 /** Animated selection move (up). */
@@ -212,12 +216,8 @@ export async function main(): Promise<void> {
         break;
       case "ArrowRight":
       case "Enter":
-        if (session.model.phase === "snippets") expandToActions();
-        else if (session.model.phase === "hub") expandToSnippets();
-        break;
       case " ":
-        if (session.model.phase === "hub") expandToSnippets();
-        else if (session.model.phase === "snippets") expandToActions();
+        onConfirm();
         break;
       case "Escape":
         void closeAnimated();

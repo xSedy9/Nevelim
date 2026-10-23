@@ -86,6 +86,20 @@ describe("navigation", () => {
     const maxed = model(5, { phase: "actions", actionSelected: 3 });
     expect(moveDown(maxed)).toBe(maxed);
   });
+
+  it("moveUp in actions moves the action selection up", () => {
+    const a = model(5, { phase: "actions", actionSelected: 2 });
+    expect(moveUp(a).actionSelected).toBe(1);
+    const top = model(5, { phase: "actions", actionSelected: 0 });
+    expect(moveUp(top)).toBe(top);
+  });
+
+  it("moveUp in actions never detaches the list from the snippet", () => {
+    const a = model(5, { phase: "actions", selected: 3, actionSelected: 1 });
+    const next = moveUp(a);
+    expect(next.selected).toBe(3);
+    expect(next.actionSelected).toBe(0);
+  });
 });
 
 describe("scroll clamping", () => {
