@@ -96,32 +96,50 @@ impl Config {
     }
 }
 
-/// Returns the default config path: `config.json` next to the running executable.
+/// Resolves the user-data base directory (the one holding `config.json`,
+/// `templates/` and `history/`).
 ///
-/// This mirrors the legacy behaviour of keeping all user data next to the app.
-pub fn default_config_path() -> PathBuf {
-    std::env::current_exe()
+/// Search order:
+/// 1. The executable directory (packaged layout);
+/// 2. The executable directory's grandparent (cargo workspace layout:
+///    `target/debug` -> repository root);
+/// 3. The current working directory.
+///
+/// Falls back to the executable directory when no candidate matches.
+pub fn resolve_base_dir() -> PathBuf {
+    let exe_dir = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|d| d.to_path_buf()))
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("config.json")
+        .unwrap_or_else(|| PathBuf::from("."));
+    let mut candidates = vec![exe_dir.clone()];
+    if let Some(grandparent) = exe_dir.ancestors().nth(2) {
+        candidates.push(grandparent.to_path_buf());
+    }
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd);
+    }
+    pick_base_dir(&candidates)
+}
+
+/// Picks the first candidate that looks like a user-data directory.
+///
+/// A directory qualifies when it contains a `templates/` folder or a
+/// `config.json` file; otherwise the first candidate wins.
+pub fn pick_base_dir(candidates: &[PathBuf]) -> PathBuf {
+    candidates
+        .iter()
+        .find(|c| c.join("templates").is_dir() || c.join("config.json").is_file())
+        .cloned()
+        .unwrap_or_else(|| candidates.first().cloned().unwrap_or_else(|| PathBuf::from(".")))
 }
 
 /// Resolves the config file actually in use.
 ///
-/// Prefers `config.json` next to the executable; in dev mode (where no config
-/// sits next to `target/debug/...`) falls back to the current working
-/// directory; when neither exists returns the exe-side path for creation.
+/// Prefers `config.json` in the resolved base directory; when neither the
+/// exe-side nor the workspace/cwd copy exists, returns the exe-side path for
+/// creation on first save.
 pub fn resolve_config_path() -> PathBuf {
-    let exe_side = default_config_path();
-    if exe_side.exists() {
-        return exe_side;
-    }
-    let cwd_side = PathBuf::from("config.json");
-    if cwd_side.exists() {
-        return cwd_side;
-    }
-    exe_side
+    resolve_base_dir().join("config.json")
 }
 
 /// Loads the configuration, falling back to defaults when the file is missing or corrupt.
@@ -183,5 +201,34 @@ mod tests {
         std::fs::write(&path, "{ not json").unwrap();
         let cfg = load_or_default(&path);
         assert_eq!(cfg, Config::default());
+    }
+
+    #[test]
+    fn pick_base_dir_prefers_candidate_with_templates() {
+        let empty = tempfile::tempdir().unwrap();
+        let full = tempfile::tempdir().unwrap();
+        std::fs::create_dir(full.path().join("templates")).unwrap();
+        let picked = pick_base_dir(&[empty.path().to_path_buf(), full.path().to_path_buf()]);
+        assert_eq!(picked, full.path());
+    }
+
+    #[test]
+    fn pick_base_dir_accepts_config_json_marker() {
+        let with_cfg = tempfile::tempdir().unwrap();
+        std::fs::write(with_cfg.path().join("config.json"), "{}").unwrap();
+        let picked = pick_base_dir(&[with_cfg.path().to_path_buf()]);
+        assert_eq!(picked, with_cfg.path());
+    }
+
+    #[test]
+    fn pick_base_dir_falls_back_to_first_candidate() {
+        let empty = tempfile::tempdir().unwrap();
+        let picked = pick_base_dir(&[empty.path().to_path_buf()]);
+        assert_eq!(picked, empty.path());
+    }
+
+    #[test]
+    fn pick_base_dir_empty_candidates_uses_cwd() {
+        assert_eq!(pick_base_dir(&[]), PathBuf::from("."));
     }
 }
