@@ -140,8 +140,13 @@ export async function closeAnimated(): Promise<void> {
   }
 }
 
-/** Reloads templates/config and rebuilds the static DOM. */
-export async function refreshState(): Promise<void> {
+/** Reloads templates/config and rebuilds the static DOM.
+ *
+ * @param hidden when true (initial boot, window invisible) the hub is built
+ *               in the hidden state; otherwise a bloom-in is played and the
+ *               hub stays visible.
+ */
+export async function refreshState(hidden = false): Promise<void> {
   const state: AppStateDto = await api.getAppState();
   session.templates = state.templates.map((t) => ({ name: t.name, path: t.path, content: t.content }));
   const root = document.getElementById("overlay-root") as HTMLDivElement;
@@ -149,8 +154,11 @@ export async function refreshState(): Promise<void> {
   session.model = initialModel(session.templates.length);
   apply(session.model);
   wireClicks();
-  await hubBloom(session.dom);
-  session.dom.hub.classList.add("hub--hidden");
+  if (hidden) {
+    session.dom.hub.classList.add("hub--hidden");
+  } else {
+    await hubBloom(session.dom);
+  }
 }
 
 /** Wires mouse clicks (only fire when native input is enabled). */
