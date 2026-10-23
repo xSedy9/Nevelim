@@ -5,8 +5,8 @@
  * keeps the exact same visual composition.
  */
 
-/** Hub circle placement. */
-export const HUB = { x: 75, y: 290, r: 24 } as const;
+/** Hub circle placement (radius reduced ~20% from the legacy 24 per user preference). */
+export const HUB = { x: 75, y: 290, r: 19 } as const;
 
 /** Snippet pill geometry and list layout. */
 export const SNIPPET = { x: 185, width: 285, height: 42, step: 46, visible: 5 } as const;
