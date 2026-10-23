@@ -267,7 +267,8 @@ function renderResult(text: string): void {
 /** Sends the refinement prompt and swaps the result text. */
 async function refineFlow(input: HTMLInputElement, send: HTMLElement, ta: HTMLTextAreaElement): Promise<void> {
   const prompt = input.value.trim();
-  if (!prompt || prompt.startsWith("💬") || session.busy) return;
+  const spec = session.spec;
+  if (!prompt || prompt.startsWith("💬") || session.busy || !spec?.found) return;
   session.busy = true;
   send.classList.add("disabled");
   send.textContent = "⠋ Думает...";
@@ -281,7 +282,7 @@ async function refineFlow(input: HTMLInputElement, send: HTMLElement, ta: HTMLTe
     send.textContent = "✕ Ошибка";
     session.root.classList.add("error");
     await errorBorder();
-    renderSpec(session.spec, session.specIsFolder);
+    renderSpec(spec, session.specIsFolder);
   } finally {
     send.classList.remove("disabled");
     if (send.textContent?.includes("Думает")) send.textContent = "Отправить";
