@@ -121,7 +121,9 @@ fn require_key(config: &Config, provider: Provider) -> CoreResult<String> {
             "Не задан API-ключ провайдера {provider:?} в config.json"
         )))
     } else {
-        Ok(key)
+        // Trim stray whitespace/newlines/quotes so dirty config edits do not
+        // turn into provider 401s.
+        Ok(key.trim().to_string())
     }
 }
 
