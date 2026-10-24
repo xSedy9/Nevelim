@@ -61,7 +61,8 @@ body {
   transition:
     opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.2s;
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .frame.shown {
@@ -268,7 +269,9 @@ button:focus-visible {
   transition:
     background 0.15s,
     box-shadow 0.15s,
-    transform 0.12s;
+    border-color 0.15s,
+    transform 0.12s,
+    width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn:hover {

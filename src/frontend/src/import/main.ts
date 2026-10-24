@@ -6,6 +6,7 @@
  */
 
 import { api, type ImportCheckDto } from "../shared/ipc";
+import { swapButtonContent } from "../shared/anim";
 import { icon } from "../shared/icons";
 
 /** Runtime session. */
@@ -59,6 +60,8 @@ function clear(): HTMLDivElement {
   closeBtn.addEventListener("click", close);
   frame.append(title, closeBtn);
   session.root.appendChild(frame);
+  // The enter transition needs the initial styles committed first.
+  requestAnimationFrame(() => frame.classList.add("shown"));
   return frame;
 }
 
@@ -66,7 +69,6 @@ function clear(): HTMLDivElement {
 function renderPick(): void {
   session.file = null;
   const frame = clear();
-  frame.classList.add("shown");
 
   const zone = el("div", "dz");
   zone.innerHTML =
@@ -75,7 +77,6 @@ function renderPick(): void {
     `<span class="dz-sub">.zip — восстановит шаблоны и настройки</span>`;
   zone.addEventListener("click", () => void pickFlow());
   frame.appendChild(zone);
-  requestAnimationFrame(() => frame.classList.add("shown"));
 }
 
 /** File dialog -> quick validation -> status view. */
@@ -97,7 +98,6 @@ async function pickFlow(): Promise<void> {
  * Clicking the file card reopens the picker dialog. */
 function renderCheck(check: ImportCheckDto): void {
   const frame = clear();
-  frame.classList.add("shown");
   session.root.classList.add(check.ok ? "ok" : "bad");
 
   const stage = el("div", "stage");
@@ -145,14 +145,14 @@ async function importFlow(imp: HTMLButtonElement): Promise<void> {
   }
 }
 
-/** Swaps a button's content to a spinner state. */
+/** Swaps a button's content to a spinner state (width tweens smoothly). */
 function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
   const original = btnEl.innerHTML;
   btnEl.classList.add("loading");
-  btnEl.innerHTML = `<span class="spinner"></span><span>${label}</span>`;
+  swapButtonContent(btnEl, `<span class="spinner"></span><span>${label}</span>`);
   return () => {
     btnEl.classList.remove("loading");
-    btnEl.innerHTML = original;
+    swapButtonContent(btnEl, original);
   };
 }
 

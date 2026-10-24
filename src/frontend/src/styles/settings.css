@@ -65,7 +65,8 @@ body {
   transition:
     opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.2s;
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .frame.shown {
@@ -290,7 +291,9 @@ button:focus-visible {
   transition:
     background 0.15s,
     color 0.15s,
-    transform 0.12s;
+    border-color 0.15s,
+    transform 0.12s,
+    width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn:active {
@@ -571,6 +574,18 @@ button:focus-visible {
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
   /* Smooth Decel enter: rise + scale per the animation spec. */
   animation: card-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+/* Warning variant: amber per the user's request (sole exception to the
+   black-and-white palette besides ok/err). */
+.mini-card.warn {
+  border-color: rgba(234, 179, 8, 0.45);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    0 0 30px rgba(234, 179, 8, 0.08);
 }
 
 @keyframes card-in {
@@ -605,6 +620,16 @@ button:focus-visible {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.35);
   color: var(--err);
+  transition:
+    background 0.3s,
+    border-color 0.3s,
+    color 0.3s;
+}
+
+.mini-ico.warn {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.35);
+  color: #eab308;
 }
 
 .mini-text {
@@ -615,6 +640,11 @@ button:focus-visible {
   font-size: 13.5px;
   font-weight: 700;
   color: var(--err);
+  transition: color 0.3s;
+}
+
+.mini-title.warn {
+  color: #eab308;
 }
 
 .mini-msg {
@@ -637,6 +667,11 @@ button:focus-visible {
   min-width: 74px;
   height: 32px;
   font-size: 12px;
+}
+
+/* ~10% wider than the sibling buttons per the user's request. */
+.mini-foot .btn-danger {
+  min-width: 82px;
 }
 
 .btn-danger {

@@ -9,6 +9,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type ChatMessage, type ModalInit, type SpecDto } from "../shared/ipc";
+import { swapButtonContent } from "../shared/anim";
 import { formatSize } from "../shared/format";
 import { icon, type IconName } from "../shared/icons";
 
@@ -57,14 +58,14 @@ function btn(cls: string, iconName: IconName | null, label: string): HTMLButtonE
   return b;
 }
 
-/** Swaps a button's content to a spinner state. */
+/** Swaps a button's content to a spinner state (width tweens smoothly). */
 function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
   const original = btnEl.innerHTML;
   btnEl.classList.add("loading");
-  btnEl.innerHTML = `<span class="spinner"></span><span>${label}</span>`;
+  swapButtonContent(btnEl, `<span class="spinner"></span><span>${label}</span>`);
   return () => {
     btnEl.classList.remove("loading");
-    btnEl.innerHTML = original;
+    swapButtonContent(btnEl, original);
   };
 }
 
@@ -96,6 +97,8 @@ function clear(back?: () => void): HTMLDivElement {
   closeBtn.addEventListener("click", () => close());
   frame.appendChild(closeBtn);
   session.root.appendChild(frame);
+  // The enter transition needs the initial styles committed first.
+  requestAnimationFrame(() => frame.classList.add("shown"));
   return frame;
 }
 
@@ -144,7 +147,6 @@ function renderSelect(): void {
     row.appendChild(b);
   }
   frame.appendChild(row);
-  requestAnimationFrame(() => frame.classList.add("shown"));
 }
 
 // ==========================================
@@ -156,7 +158,6 @@ function chooseFolder(): void {
   if (session.busy) return;
   session.phase = "folder";
   const frame = clear(renderSelect);
-  frame.classList.add("shown");
 
   const zone = el("div", "dropzone full");
   zone.innerHTML =
@@ -190,7 +191,6 @@ function chooseFile(): void {
   if (session.busy) return;
   session.phase = "file";
   const frame = clear(renderSelect);
-  frame.classList.add("shown");
 
   const zone = el("div", "dropzone full");
   zone.innerHTML =
@@ -227,7 +227,6 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
   session.phase = "spec";
   session.specIsFolder = isFolder;
   const frame = clear(renderSelect);
-  frame.classList.add("shown");
   session.root.classList.remove("ok");
   const failed = !spec.found || errorMessage !== undefined;
   if (failed) {
@@ -359,7 +358,6 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
 function renderResult(text: string): void {
   session.phase = "result";
   const frame = clear(renderSelect);
-  frame.classList.add("shown");
   session.root.classList.remove("error");
 
   const head = el("div", "result-head");

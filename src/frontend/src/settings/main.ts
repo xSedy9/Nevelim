@@ -10,6 +10,7 @@ import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type AppConfig, type ProviderId } from "../shared/ipc";
+import { swapButtonContent } from "../shared/anim";
 import { icon, type IconName } from "../shared/icons";
 
 /** Provider descriptors for the segmented control. */
@@ -453,12 +454,12 @@ function showErrorModal(message: string): Promise<void> {
 /** Warns about unsaved changes: Cancel keeps editing, force closes the window. */
 function showWarnModal(): void {
   const overlay = el("div", "mini-overlay");
-  const card = el("div", "mini-card");
+  const card = el("div", "mini-card warn");
   const body = el("div", "mini-body");
-  const ico = el("span", "mini-ico");
+  const ico = el("span", "mini-ico warn");
   ico.innerHTML = icon("warning", 20);
   const text = el("div", "mini-text");
-  text.appendChild(el("div", "mini-title", "Предупреждение"));
+  text.appendChild(el("div", "mini-title warn", "Предупреждение"));
   const msg = el("div", "mini-msg");
   msg.textContent = "Есть несохранённые изменения. Закрыть без сохранения?";
   text.appendChild(msg);
@@ -492,14 +493,14 @@ function showWarnModal(): void {
   cancel.focus();
 }
 
-/** Swaps a button's content to a spinner state. */
+/** Swaps a button's content to a spinner state (width tweens smoothly). */
 function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
   const original = btnEl.innerHTML;
   btnEl.classList.add("loading");
-  btnEl.innerHTML = `<span class="spinner"></span><span>${label}</span>`;
+  swapButtonContent(btnEl, `<span class="spinner"></span><span>${label}</span>`);
   return () => {
     btnEl.classList.remove("loading");
-    btnEl.innerHTML = original;
+    swapButtonContent(btnEl, original);
   };
 }
 
