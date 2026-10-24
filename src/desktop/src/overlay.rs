@@ -126,20 +126,37 @@ pub fn show_at_cursor(app: &AppHandle) {
 }
 
 /// Hides the overlay immediately (no animation; the frontend animates first).
+///
+/// Idempotent: a second call (e.g. the frontend confirming after the
+/// force-hide fallback already ran) is a no-op, which avoids touching a
+/// hidden window twice (Win32 posts can fail with an invalid handle).
 pub fn hide(app: &AppHandle) {
+    {
+        let state = app.state::<AppState>();
+        let mut visible = state.overlay_visible.lock().unwrap();
+        if !*visible {
+            return;
+        }
+        *visible = false;
+        *state.overlay_input_enabled.lock().unwrap() = false;
+    }
     if let Some(win) = app.get_webview_window("overlay") {
         let _ = win.set_ignore_cursor_events(true);
         let _ = win.hide();
     }
-    let state = app.state::<AppState>();
-    *state.overlay_visible.lock().unwrap() = false;
-    *state.overlay_input_enabled.lock().unwrap() = false;
 }
 
 /// Debounce window for the hotkey toggle: keyboard auto-repeat re-fires the
 /// global shortcut while the combo is held, which must not close the overlay
 /// right after it opened (mirrors the legacy 450 ms debounce).
 pub const TOGGLE_DEBOUNCE_MS: u64 = 450;
+
+/// How long the frontend may take to animate + hide after `request-close`.
+///
+/// The normal close finishes in ~450 ms, but some flows intentionally keep the
+/// overlay longer (e.g. the export feedback toast runs ~2 s), so the
+/// dead-webview fallback only fires well after that.
+pub const HIDE_CONFIRM_BUDGET_MS: u64 = 2500;
 
 /// Hotkey entry point: hides a visible overlay (via animated frontend close)
 /// or shows it at the cursor. Auto-repeat presses within
@@ -163,7 +180,7 @@ pub fn toggle(app: &AppHandle) {
         // force-hide so the hotkey always recovers.
         let handle = app.clone();
         std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(700));
+            std::thread::sleep(Duration::from_millis(HIDE_CONFIRM_BUDGET_MS));
             let still_visible = *handle.state::<AppState>().overlay_visible.lock().unwrap();
             if still_visible {
                 eprintln!("[overlay] frontend did not hide in time, force-hiding");
