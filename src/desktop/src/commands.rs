@@ -309,7 +309,8 @@ pub fn copy_text(app: AppHandle, text: String) -> Result<(), String> {
     app.clipboard().write_text(&text).map_err(|e| e.to_string())
 }
 
-/// Copies `text` to the clipboard and pastes it into the previously focused window.
+/// Copies `text` to the clipboard and, unless auto-paste is disabled in the
+/// config, pastes it into the previously focused window.
 #[tauri::command]
 pub async fn paste_snippet(
     app: AppHandle,
@@ -318,6 +319,10 @@ pub async fn paste_snippet(
 ) -> Result<(), String> {
     let prev = *state.prev_focus.lock().unwrap();
     let _ = app.clipboard().write_text(&text);
+    // Auto-paste off: the snippet stays in the clipboard only.
+    if !crate::load_config().paste_automatically {
+        return Ok(());
+    }
     if let Some(prev) = prev {
         focus::restore_focus(prev);
         tokio::time::sleep(Duration::from_millis(
