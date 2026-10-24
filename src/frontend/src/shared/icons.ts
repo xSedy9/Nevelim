@@ -12,6 +12,7 @@ export type IconName =
   | "arrow-left"
   | "check"
   | "copy"
+  | "save"
   | "send"
   | "sparkle"
   | "warning"
@@ -29,6 +30,8 @@ const PATHS: Record<IconName, string> = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   copy:
     '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  save:
+    '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/>',
   send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
   sparkle:
     '<path fill="currentColor" stroke="none" d="M12 2.6l1.87 5.83a2 2 0 0 0 1.3 1.3l5.83 1.87-5.83 1.87a2 2 0 0 0-1.3 1.3L12 20.63l-1.87-5.83a2 2 0 0 0-1.3-1.3L2.9 11.63l5.83-1.87a2 2 0 0 0 1.3-1.3z"/>',
