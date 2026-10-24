@@ -485,6 +485,7 @@ button:focus-visible {
   text-align: center;
   padding-bottom: 10px;
   word-break: break-word;
+  animation: rise-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
 }
 
 .stage {
@@ -496,11 +497,26 @@ button:focus-visible {
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--surface);
+  transition:
+    border-color 0.3s,
+    background 0.3s;
 }
 
 .stage.bad {
   border-color: rgba(239, 68, 68, 0.3);
   background: rgba(239, 68, 68, 0.03);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The bottom action rises in after the color transition starts. */
+.area > .btn {
+  animation: rise-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
 }
 
 .stage-inner {

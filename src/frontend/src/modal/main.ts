@@ -25,6 +25,8 @@ interface Session {
   chat: ChatMessage[];
   busy: boolean;
   closing: boolean;
+  /** Pending ok/error frame-color timer (cancelled by error modals). */
+  statusTimer: number | null;
   root: HTMLDivElement;
 }
 
@@ -36,6 +38,7 @@ const session: Session = {
   chat: [],
   busy: false,
   closing: false,
+  statusTimer: null,
   root: null as unknown as HTMLDivElement,
 };
 
@@ -227,19 +230,10 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
   session.phase = "spec";
   session.specIsFolder = isFolder;
   const frame = clear(renderSelect);
-  session.root.classList.remove("ok");
   const failed = !spec.found || errorMessage !== undefined;
-  if (failed) {
-    session.root.classList.add("error");
-    const err = el("div", "err-line");
-    err.textContent = errorMessage ?? spec.error ?? "Неизвестная ошибка";
-    frame.appendChild(err);
-  } else {
-    session.root.classList.add("ok");
-  }
 
   // Full-space status panel: icon centered, file name and size beside it.
-  const stage = el("div", "stage");
+  const stage = el("div", `stage${failed ? " bad" : ""}`);
   const inner = el("div", "stage-inner");
   const ico = el("div", "stage-ico");
   ico.innerHTML = icon(isFolder ? "folder" : "file", 34);
@@ -257,6 +251,12 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
   stage.appendChild(inner);
   frame.appendChild(stage);
 
+  if (failed) {
+    const err = el("div", "err-line");
+    err.textContent = errorMessage ?? spec.error ?? "Неизвестная ошибка";
+    frame.appendChild(err);
+  }
+
   const area = el("div", "area");
   if (spec.found) {
     const adapt = btn("btn-primary", "sparkle", "Адаптировать");
@@ -268,6 +268,16 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
     area.appendChild(retry);
   }
   frame.appendChild(area);
+
+  // Color the frame only after the entrance finishes: the border and stage
+  // then visibly transition to green/red instead of starting colored.
+  session.statusTimer = window.setTimeout(
+    () => {
+      session.statusTimer = null;
+      session.root.classList.add(failed ? "error" : "ok");
+    },
+    280,
+  );
 }
 
 /** Normalizes an AI call failure into a user-facing message. */
@@ -286,7 +296,14 @@ function aiErrorText(e: unknown): string {
  * the message text beside it, OK button at the bottom right.
  * Dismissed by the OK button or a backdrop click; plays a fade-out exit. */
 function showErrorModal(message: string): void {
-  session.root.classList.add("error");
+  // A pending ok coloring must not override the error state.
+  if (session.statusTimer) {
+    clearTimeout(session.statusTimer);
+    session.statusTimer = null;
+  }
+  session.root.classList.remove("ok");
+  // Let the overlay fade in first, then transition the frame to red.
+  window.setTimeout(() => session.root.classList.add("error"), 250);
   const overlay = el("div", "mini-overlay");
   const card = el("div", "mini-card");
 
