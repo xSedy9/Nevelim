@@ -20,7 +20,7 @@ fn backup_name(now: SystemTime) -> String {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-    format!("quick-snippets-backup-{secs}.zip")
+    format!("nevelim-backup-{secs}.zip")
 }
 
 /// Creates a backup zip in `dest_dir` and returns its full path.

@@ -13,13 +13,13 @@ use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
-use quick_snippets_core::ai::{self, ChatMessage};
-use quick_snippets_core::config::{self, Config, Provider};
-use quick_snippets_core::error::CoreError;
-use quick_snippets_core::export;
-use quick_snippets_core::history;
-use quick_snippets_core::spec::{self, FoundSpec};
-use quick_snippets_core::templates::{self, TemplateEntry};
+use nevelim_core::ai::{self, ChatMessage};
+use nevelim_core::config::{self, Config, Provider};
+use nevelim_core::error::CoreError;
+use nevelim_core::export;
+use nevelim_core::history;
+use nevelim_core::spec::{self, FoundSpec};
+use nevelim_core::templates::{self, TemplateEntry};
 
 use crate::focus;
 use crate::logging;
@@ -29,7 +29,7 @@ use crate::state::{AppState, ModalInit};
 /// Base directory for user data (config, templates, history) — resolved by
 /// the core crate (exe dir -> workspace root -> cwd).
 pub(crate) fn base_dir() -> PathBuf {
-    quick_snippets_core::config::resolve_base_dir()
+    nevelim_core::config::resolve_base_dir()
 }
 
 /// Logs an operation failure before it is surfaced to the frontend.
@@ -101,7 +101,7 @@ pub fn get_settings() -> Config {
 /// Saves the configuration and re-registers the global hotkey.
 #[tauri::command]
 pub fn save_settings(app: AppHandle, config: Config) -> Result<(), String> {
-    if quick_snippets_core::hotkey::parse_hotkey(&config.hotkey).is_none() {
+    if nevelim_core::hotkey::parse_hotkey(&config.hotkey).is_none() {
         let message = "Invalid hotkey format. Example: alt+shift+v".to_string();
         log_err("save_settings", &message);
         return Err(message);
@@ -424,12 +424,9 @@ pub async fn paste_snippet(
     }
     if let Some(prev) = prev {
         focus::restore_focus(prev);
-        tokio::time::sleep(Duration::from_millis(
-            quick_snippets_core::paste::PASTE_SETTLE_MS,
-        ))
-        .await;
+        tokio::time::sleep(Duration::from_millis(nevelim_core::paste::PASTE_SETTLE_MS)).await;
     }
-    if let Err(e) = quick_snippets_core::paste::send_paste_keystroke() {
+    if let Err(e) = nevelim_core::paste::send_paste_keystroke() {
         log_err("paste", &e.to_string());
         return Err(e.to_string());
     }
@@ -529,7 +526,7 @@ fn spec_error(error: &str) -> SpecDto {
 
 /// Converts a discovered spec into a DTO, enforcing the size limit.
 fn spec_from_found(found: FoundSpec) -> SpecDto {
-    if let Err(msg) = quick_snippets_core::spec::check_size(&found.content) {
+    if let Err(msg) = nevelim_core::spec::check_size(&found.content) {
         return spec_error(&msg);
     }
     let size_bytes = found.content.len() as u64;

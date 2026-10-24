@@ -25,7 +25,7 @@ export default defineConfig({
       provider: "v8",
       // The repo may live on a network drive where the v8 provider cannot
       // create its temp dir; keep coverage artifacts on the local disk.
-      reportsDirectory: resolve(tmpdir(), "quick-snippets-coverage"),
+      reportsDirectory: resolve(tmpdir(), "nevelim-coverage"),
       // Logic modules must stay above the 90% line; the window entries
       // (src/<window>/main.ts) are thin Tauri/DOM wiring verified by the
       // e2e smoke suite instead.

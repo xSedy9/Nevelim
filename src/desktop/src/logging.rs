@@ -1,9 +1,9 @@
 //! Minimal append-only file logging under `<base_dir>/logs/`.
 //!
 //! std-only by design (no log crate/plugins): the desktop shell and IPC
-//! commands record problems to `logs/quick-snippets.log`, and the frontend
+//! commands record problems to `logs/nevelim.log`, and the frontend
 //! forwards its console errors through the `log_frontend` command. The active
-//! file is rotated to `quick-snippets.log.old` once it grows past 2 MB.
+//! file is rotated to `nevelim.log.old` once it grows past 2 MB.
 
 use std::fs::{self, OpenOptions};
 use std::io::Write;
@@ -18,7 +18,7 @@ static LOG_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// Resolves the log file path for a base directory.
 pub fn log_path(base_dir: &Path) -> PathBuf {
-    base_dir.join("logs").join("quick-snippets.log")
+    base_dir.join("logs").join("nevelim.log")
 }
 
 /// Initializes the log file path (called once at app setup).

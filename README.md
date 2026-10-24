@@ -34,8 +34,8 @@ just a tiny webview, native-speed backend logic and GPU-rendered UI.
 
 ```
 src/frontend/   TypeScript + Vite web layer (overlay, modal, settings, import UI)
-src/backend/    quick-snippets-core: pure Rust business logic (no Tauri dependency)
-src/desktop/    quick-snippets-desktop: Tauri shell (windows, hotkeys, plugins, IPC)
+src/backend/    nevelim-core: pure Rust business logic (no Tauri dependency)
+src/desktop/    nevelim-desktop: Tauri shell (windows, hotkeys, plugins, IPC)
 tests/          Frontend (Vitest) and end-to-end smoke tests
 docs/           Technical documentation & specifications
 config.example.json    Template for the local config.json (API keys live there)
