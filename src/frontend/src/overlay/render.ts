@@ -27,10 +27,10 @@ import type { OverlayModel } from "./state";
 
 /** Action descriptors (mirrors the legacy action list). */
 export const ACTIONS: Array<{ label: string; key: string }> = [
-  { label: "Скопировать", key: "copy" },
-  { label: "Вставить", key: "paste" },
-  { label: "Изменить", key: "edit" },
-  { label: "Адаптировать", key: "adapt" },
+  { label: "Copy", key: "copy" },
+  { label: "Paste", key: "paste" },
+  { label: "Edit", key: "edit" },
+  { label: "Adapt", key: "adapt" },
 ];
 
 /** Everything the render layer needs about one snippet. */
@@ -85,7 +85,7 @@ export interface OverlayDom {
     line: SVGPathElement;
     dot: SVGCircleElement;
   };
-  /** Settings action pills (Открыть / Экспортировать / Импортировать). */
+  /** Settings action pills (Open / Export / Import). */
   settingsActions: Array<{
     pill: HTMLDivElement;
     line: SVGPathElement;
@@ -176,7 +176,7 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
   }) as SVGCircleElement;
   const settingsPillEl = document.createElement("div");
   settingsPillEl.className = "pill settings hit";
-  settingsPillEl.textContent = "Настройки";
+  settingsPillEl.textContent = "Settings";
   settingsPillEl.style.left = `${SETTINGS.x}px`;
   settingsPillEl.style.top = `${HUB.y - SNIPPET.height / 2}px`;
   root.appendChild(settingsPillEl);
@@ -184,7 +184,7 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
 
   // Settings action pills (fan out to the LEFT of the settings pill, mirrored
   // snippet-action layout: connector lines + dots).
-  const SETTINGS_ACTION_DEFS = ["Открыть", "Экспортировать", "Импортировать"];
+  const SETTINGS_ACTION_DEFS = ["Open", "Export", "Import"];
   const settingsActions = SETTINGS_ACTION_DEFS.map((label, k) => {
     const y = settingsActionY(k);
     const line = svgEl("path", {
