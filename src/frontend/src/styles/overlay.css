@@ -241,6 +241,18 @@ svg .bracket.shown {
   transform: translateX(0);
 }
 
+/* Settings actions: full-size list items, identical to snippet pills. */
+.pill.settings-action {
+  width: 285px;
+  height: 42px;
+  font-size: 15px;
+  transform: translateX(-35px);
+}
+
+.pill.settings-action.visible {
+  transform: translateX(0);
+}
+
 /* ---------- Closing state ---------- */
 
 #overlay-root.closing .pill {

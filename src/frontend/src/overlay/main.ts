@@ -91,19 +91,22 @@ function retractOne(): void {
   });
 }
 
+/** Expands settings -> settings-actions with animation (Left / RMB / Enter). */
+function expandSettingsActions(): void {
+  const next = expand(session.model);
+  if (!next) return;
+  void animate(async () => {
+    apply(next);
+    await sleep(300);
+  });
+}
+
 /** Executes the currently selected action (Enter / Space / click). */
 function onConfirm(): void {
   if (session.model.phase === "snippets") expandToActions();
   else if (session.model.phase === "hub") expandToSnippets();
-  else if (session.model.phase === "settings") {
-    const next = expand(session.model);
-    if (next) {
-      void animate(async () => {
-        apply(next);
-        await sleep(300);
-      });
-    }
-  } else if (session.model.phase === "settings-actions") {
+  else if (session.model.phase === "settings") expandSettingsActions();
+  else if (session.model.phase === "settings-actions") {
     void runSettingsAction(SETTINGS_ACTION_KEYS[session.model.actionSelected]);
   } else if (session.model.phase === "actions") {
     const t = session.templates[session.model.selected];
@@ -281,6 +284,10 @@ export async function main(): Promise<void> {
         if (session.model.phase === "hub") {
           const next = openSettingsEntry(session.model);
           if (next) apply(next);
+        } else if (session.model.phase === "settings") {
+          // Left on the settings pill fans out its actions (symmetric with
+          // the hub, where Left reveals the settings pill).
+          expandSettingsActions();
         } else {
           retractOne();
         }
@@ -319,12 +326,13 @@ export async function main(): Promise<void> {
     { passive: true },
   );
 
-  // Right mouse button in the hub phase also opens the snippet list.
+  // Right mouse button dives one level deeper: hub -> snippets and
+  // settings -> settings actions.
   document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
-    if (session.model.phase === "hub" && !session.animating && !session.closing) {
-      expandToSnippets();
-    }
+    if (session.animating || session.closing) return;
+    if (session.model.phase === "hub") expandToSnippets();
+    else if (session.model.phase === "settings") expandSettingsActions();
   });
 
   // Show/hide lifecycle. "overlay-shown" is emitted by the Rust side right
