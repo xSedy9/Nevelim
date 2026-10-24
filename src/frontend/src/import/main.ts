@@ -37,11 +37,12 @@ function clear(): HTMLDivElement {
   session.root.classList.remove("ok", "bad");
   session.root.innerHTML = "";
   const frame = el("div", "frame");
+  const title = el("div", "wiz-title", "Мастер импорта");
   const closeBtn = el("button", "icon-btn");
   closeBtn.innerHTML = icon("x", 14);
   closeBtn.title = "Закрыть (Esc)";
   closeBtn.addEventListener("click", close);
-  frame.appendChild(closeBtn);
+  frame.append(title, closeBtn);
   session.root.appendChild(frame);
   return frame;
 }

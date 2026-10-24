@@ -91,6 +91,16 @@ body {
   color: #ffffff;
 }
 
+.wiz-title {
+  position: absolute;
+  top: 15px;
+  left: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .dz {
   flex: 1;
   min-height: 0;
