@@ -33,6 +33,8 @@ const session = {
   dismissModal: null as (() => void) | null,
   /** JSON snapshot of the last saved/loaded config (dirty tracking). */
   saved: "",
+  /** Window is playing its exit animation. */
+  closing: false,
   root: null as unknown as HTMLDivElement,
 };
 
@@ -202,6 +204,10 @@ function render(): void {
 
   frame.appendChild(fab);
   session.root.appendChild(frame);
+  // Stagger indices for the row entrance animation.
+  Array.from(frame.children).forEach((child, i) => {
+    (child as HTMLElement).style.setProperty("--i", String(Math.min(i, 9)));
+  });
   requestAnimationFrame(() => {
     frame.classList.add("shown");
     refreshSaveButton(fab);
@@ -424,10 +430,14 @@ function showErrorModal(message: string): Promise<void> {
     overlay.appendChild(card);
 
     const dismiss = () => {
-      overlay.remove();
-      session.root.classList.remove("error");
-      session.dismissModal = null;
-      resolve();
+      if (overlay.classList.contains("leaving")) return;
+      overlay.classList.add("leaving");
+      setTimeout(() => {
+        overlay.remove();
+        session.root.classList.remove("error");
+        session.dismissModal = null;
+        resolve();
+      }, 180);
     };
     ok.addEventListener("click", dismiss);
     overlay.addEventListener("pointerdown", (e) => {
@@ -435,6 +445,8 @@ function showErrorModal(message: string): Promise<void> {
     });
     session.dismissModal = dismiss;
     session.root.appendChild(overlay);
+    // Keyboard-first: Enter confirms the dialog right away.
+    ok.focus();
   });
 }
 
@@ -459,8 +471,12 @@ function showWarnModal(): void {
   overlay.appendChild(card);
 
   const dismiss = () => {
-    overlay.remove();
-    session.dismissModal = null;
+    if (overlay.classList.contains("leaving")) return;
+    overlay.classList.add("leaving");
+    setTimeout(() => {
+      overlay.remove();
+      session.dismissModal = null;
+    }, 180);
   };
   cancel.addEventListener("click", dismiss);
   force.addEventListener("click", () => {
@@ -472,6 +488,8 @@ function showWarnModal(): void {
   });
   session.dismissModal = dismiss;
   session.root.appendChild(overlay);
+  // Keyboard-first: Enter presses the safe default (Отмена).
+  cancel.focus();
 }
 
 /** Swaps a button's content to a spinner state. */
@@ -485,9 +503,17 @@ function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
   };
 }
 
-/** Closes the settings window. */
+/** Closes the settings window with the exit animation. */
 function close(): void {
-  void api.closeSettings();
+  if (session.closing) return;
+  session.closing = true;
+  const frame = session.root.querySelector(".frame");
+  if (frame) {
+    frame.classList.add("leaving");
+    setTimeout(() => void api.closeSettings(), 170);
+  } else {
+    void api.closeSettings();
+  }
 }
 
 /** Re-fetches the config from the backend and re-renders the form. */

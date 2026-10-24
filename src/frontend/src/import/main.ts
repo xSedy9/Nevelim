@@ -13,6 +13,7 @@ const session = {
   root: null as unknown as HTMLDivElement,
   file: null as string | null,
   busy: false,
+  closing: false,
 };
 
 /** Typed element factory. */
@@ -27,15 +28,29 @@ const el = <K extends keyof HTMLElementTagNameMap>(
   return e;
 };
 
-/** Closes the wizard window. */
+/** Closes the wizard window with the exit animation. */
 function close(): void {
-  void api.closeImport();
+  if (session.closing) return;
+  session.closing = true;
+  const frame = session.root.querySelector(".frame");
+  if (frame) {
+    frame.classList.add("leaving");
+    setTimeout(() => void api.closeImport(), 170);
+  } else {
+    void api.closeImport();
+  }
 }
 
-/** Clears the content area and returns a fresh frame. */
+/** Clears the content area and returns a fresh frame.
+ *
+ * The previous frame plays a quick exit animation instead of vanishing. */
 function clear(): HTMLDivElement {
+  const old = session.root.querySelector(".frame");
+  if (old) {
+    old.classList.add("leaving");
+    setTimeout(() => old.remove(), 180);
+  }
   session.root.classList.remove("ok", "bad");
-  session.root.innerHTML = "";
   const frame = el("div", "frame");
   const title = el("div", "wiz-title", "Мастер импорта");
   const closeBtn = el("button", "icon-btn");

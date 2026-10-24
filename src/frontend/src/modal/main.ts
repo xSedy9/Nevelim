@@ -23,6 +23,7 @@ interface Session {
   specIsFolder: boolean;
   chat: ChatMessage[];
   busy: boolean;
+  closing: boolean;
   root: HTMLDivElement;
 }
 
@@ -33,6 +34,7 @@ const session: Session = {
   specIsFolder: false,
   chat: [],
   busy: false,
+  closing: false,
   root: null as unknown as HTMLDivElement,
 };
 
@@ -68,12 +70,18 @@ function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
 
 /** Clears the content area and returns a fresh frame.
  *
+ * The previous frame plays a quick exit animation instead of vanishing.
  * Always carries the close (top-right) button; pass a `back` handler to also
  * get an icon-only back button (top-left). Resets status classes.
  */
 function clear(back?: () => void): HTMLDivElement {
+  const old = session.root.querySelector(".frame");
+  if (old) {
+    old.classList.add("leaving");
+    setTimeout(() => old.remove(), 180);
+  }
+  session.root.querySelectorAll(".mini-overlay").forEach((o) => o.remove());
   session.root.classList.remove("error", "ok");
-  session.root.innerHTML = "";
   const frame = el("div", "frame");
   if (back) {
     const backBtn = el("button", "icon-btn left");
@@ -99,12 +107,18 @@ function promptStrip(frame: HTMLDivElement, text: string): void {
   frame.appendChild(p);
 }
 
-/** Closes the modal window. */
+/** Closes the modal window with the exit animation. */
 function close(): void {
-  void api.closeModal();
+  if (session.closing) return;
+  session.closing = true;
+  const frame = session.root.querySelector(".frame");
+  if (frame) {
+    frame.classList.add("leaving");
+    setTimeout(() => void api.closeModal(), 170);
+  } else {
+    void api.closeModal();
+  }
 }
-
-/** Closes the modal window. */
 
 // ==========================================
 // PHASE 1: SOURCE SELECTION
@@ -271,7 +285,7 @@ function aiErrorText(e: unknown): string {
 
 /** Shows a modal-in-modal error card: warning icon left, "Ошибка" title with
  * the message text beside it, OK button at the bottom right.
- * Dismissed by the OK button or a backdrop click. */
+ * Dismissed by the OK button or a backdrop click; plays a fade-out exit. */
 function showErrorModal(message: string): void {
   session.root.classList.add("error");
   const overlay = el("div", "mini-overlay");
@@ -294,9 +308,15 @@ function showErrorModal(message: string): void {
   card.append(body, foot);
   overlay.appendChild(card);
 
+  let closing = false;
   const dismiss = () => {
-    overlay.remove();
-    session.root.classList.remove("error");
+    if (closing) return;
+    closing = true;
+    overlay.classList.add("leaving");
+    setTimeout(() => {
+      overlay.remove();
+      session.root.classList.remove("error");
+    }, 180);
   };
   ok.addEventListener("click", dismiss);
   overlay.addEventListener("pointerdown", (e) => {
@@ -304,6 +324,8 @@ function showErrorModal(message: string): void {
   });
 
   session.root.appendChild(overlay);
+  // Keyboard-first: Enter confirms the dialog right away.
+  ok.focus();
 }
 
 /** Runs the AI adaptation with a spinner, then shows the result phase.
@@ -422,6 +444,16 @@ async function refineFlow(
 // ENTRY POINT
 // ==========================================
 
+/** Collects visible interactive controls for keyboard navigation. */
+function focusables(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>("button, input, textarea")).filter(
+    (n) => {
+      const disabled = (n as HTMLButtonElement).disabled;
+      return !disabled && n.offsetParent !== null;
+    },
+  );
+}
+
 /** Entry point: loads the payload, builds phase 1, wires global handlers. */
 export async function main(): Promise<void> {
   session.root = document.getElementById("modal-root") as HTMLDivElement;
@@ -437,7 +469,23 @@ export async function main(): Promise<void> {
   renderSelect();
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !session.busy) close();
+    if (e.key === "Escape") {
+      if (!session.busy) close();
+      return;
+    }
+    // Arrow keys cycle focus between buttons/controls (Enter/Space then
+    // activate them natively; Tab cycles as usual). Text fields keep the
+    // arrows for caret movement.
+    if (!["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"].includes(e.key)) return;
+    const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+    if (tag === "input" || tag === "textarea") return;
+    const items = focusables();
+    if (items.length === 0) return;
+    const idx = items.indexOf(document.activeElement as HTMLElement);
+    const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+    const next = idx === -1 ? 0 : (idx + step + items.length) % items.length;
+    items[next].focus();
+    e.preventDefault();
   });
 
   // Native window dragging from designated (non-interactive) areas.

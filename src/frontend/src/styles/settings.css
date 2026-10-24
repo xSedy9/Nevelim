@@ -61,16 +61,49 @@ body {
     0 24px 70px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   opacity: 0;
-  transform: translateY(8px) scale(0.97);
+  transform: translateY(12px) scale(0.94);
   transition:
-    opacity 0.22s ease-out,
-    transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1),
+    opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
     border-color 0.2s;
 }
 
 .frame.shown {
   opacity: 1;
   transform: none;
+}
+
+/* Symmetric exit: quick fade + slight scale-down, pinned over the root. */
+.frame.leaving {
+  position: absolute;
+  inset: 6px;
+  width: auto;
+  height: auto;
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+/* Keyboard focus ring (Tab navigation). */
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+
+/* Staggered row entrance (Smooth Decel, 30ms per row). */
+.frame.shown > *:not(.title):not(.icon-btn):not(.save-fab) {
+  animation: row-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 0.03s);
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 /* The column overflows into a scrollbar; without this flex-shrink squeezes
@@ -420,6 +453,10 @@ body {
   color: #ffffff;
 }
 
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
 .spinner {
   width: 14px;
   height: 14px;
@@ -508,6 +545,19 @@ body {
   justify-content: center;
   background: rgba(0, 0, 0, 0.55);
   border-radius: 20px;
+  animation: overlay-in 0.2s ease-out;
+}
+
+.mini-overlay.leaving {
+  opacity: 0;
+  transition: opacity 0.18s cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .mini-card {
@@ -519,14 +569,23 @@ body {
   border: 1px solid var(--border);
   border-radius: 16px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
-  animation: mini-pop 0.18s ease-out;
+  /* Smooth Decel enter: rise + scale per the animation spec. */
+  animation: card-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes mini-pop {
+@keyframes card-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(12px) scale(0.94);
   }
+}
+
+.mini-overlay.leaving .mini-card {
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 1, 1);
 }
 
 .mini-body {
