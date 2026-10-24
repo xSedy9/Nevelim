@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "smoke": "node ../../tests/e2e/smoke.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "app:dev": "cd ../desktop && tauri dev",

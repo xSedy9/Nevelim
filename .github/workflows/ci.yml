@@ -28,6 +28,7 @@ jobs:
       - run: npm test
       - run: npm run test:coverage
       - run: npm run build
+      - run: npm run smoke
 
   rust:
     strategy:
