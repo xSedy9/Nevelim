@@ -269,9 +269,46 @@ function aiErrorText(e: unknown): string {
   return raw;
 }
 
+/** Shows a modal-in-modal error card: warning icon left, "Ошибка" title with
+ * the message text beside it, OK button at the bottom right.
+ * Dismissed by the OK button or a backdrop click. */
+function showErrorModal(message: string): void {
+  session.root.classList.add("error");
+  const overlay = el("div", "mini-overlay");
+  const card = el("div", "mini-card");
+
+  const body = el("div", "mini-body");
+  const ico = el("span", "mini-ico");
+  ico.innerHTML = icon("warning", 20);
+  const text = el("div", "mini-text");
+  text.appendChild(el("div", "mini-title", "Ошибка"));
+  const msg = el("div", "mini-msg");
+  msg.textContent = message;
+  text.appendChild(msg);
+  body.append(ico, text);
+
+  const foot = el("div", "mini-foot");
+  const ok = btn("btn-dark", null, "OK");
+  foot.appendChild(ok);
+
+  card.append(body, foot);
+  overlay.appendChild(card);
+
+  const dismiss = () => {
+    overlay.remove();
+    session.root.classList.remove("error");
+  };
+  ok.addEventListener("click", dismiss);
+  overlay.addEventListener("pointerdown", (e) => {
+    if (e.target === overlay) dismiss();
+  });
+
+  session.root.appendChild(overlay);
+}
+
 /** Runs the AI adaptation with a spinner, then shows the result phase.
  *
- * On failure re-renders the spec view with a persistent red error note.
+ * On failure re-renders the clean spec view and raises an error mini-modal.
  */
 async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
   if (session.busy || !session.spec?.found) return;
@@ -284,7 +321,8 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
     renderResult(result);
   } catch (e) {
     console.error("adapt failed:", e);
-    renderSpec(spec, session.specIsFolder, aiErrorText(e));
+    renderSpec(spec, session.specIsFolder);
+    showErrorModal(aiErrorText(e));
   } finally {
     restore();
     session.busy = false;
@@ -351,23 +389,6 @@ function renderResult(text: string): void {
   frame.appendChild(footer);
 }
 
-/** Shows a transient red error note above the chat bar (auto-dismisses). */
-function flashError(msg: string): void {
-  session.root.classList.add("error");
-  const chat = session.root.querySelector(".chat");
-  const err = el("div", "err-line");
-  err.textContent = msg;
-  if (chat?.parentElement) {
-    chat.parentElement.insertBefore(err, chat);
-  } else {
-    session.root.appendChild(err);
-  }
-  setTimeout(() => {
-    err.remove();
-    session.root.classList.remove("error");
-  }, 4500);
-}
-
 /** Sends the refinement prompt and swaps the result text. */
 async function refineFlow(
   input: HTMLInputElement,
@@ -390,7 +411,7 @@ async function refineFlow(
     input.value = "";
   } catch (e) {
     console.error("refine failed:", e);
-    flashError(aiErrorText(e));
+    showErrorModal(aiErrorText(e));
   } finally {
     restore();
     session.busy = false;
