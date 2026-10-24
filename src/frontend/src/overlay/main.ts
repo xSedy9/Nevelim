@@ -309,12 +309,9 @@ export async function main(): Promise<void> {
           const next = openSettingsEntry(session.model);
           if (next) apply(next);
         } else if (session.model.phase === "settings") {
-          // Left on the settings pill fans out its actions the first time;
-          // after coming back from the actions it retracts further to the hub
-          // instead of re-expanding (no stuck loop).
-          if (session.model.settingsExpanded) {
-            retractOne();
-          } else {
+          // Left reveals the actions the first time; afterwards it is a
+          // no-op — the branch is left via Right or Esc.
+          if (!session.model.settingsExpanded) {
             expandSettingsActions();
           }
         } else {
