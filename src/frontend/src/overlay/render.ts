@@ -11,11 +11,13 @@ import {
   CANVAS,
   HUB,
   SETTINGS,
+  SETTINGS_ACTION,
   SNIPPET,
   actionConnectorPath,
   actionY,
   bracketPath,
   connectorPath,
+  settingsActionConnectorPath,
   settingsActionY,
   settingsConnectorPath,
   slotY,
@@ -84,7 +86,11 @@ export interface OverlayDom {
     dot: SVGCircleElement;
   };
   /** Settings action pills (Открыть / Экспортировать / Импортировать). */
-  settingsActions: Array<{ pill: HTMLDivElement }>;
+  settingsActions: Array<{
+    pill: HTMLDivElement;
+    line: SVGPathElement;
+    dot: SVGCircleElement;
+  }>;
 }
 
 /** Builds the static overlay DOM for the given templates. */
@@ -176,16 +182,29 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
   root.appendChild(settingsPillEl);
   svg.append(sLine, sDot);
 
-  // Settings action pills (fan out under the settings pill position).
+  // Settings action pills (fan out to the LEFT of the settings pill, mirrored
+  // snippet-action layout: connector lines + dots).
   const SETTINGS_ACTION_DEFS = ["Открыть", "Экспортировать", "Импортировать"];
   const settingsActions = SETTINGS_ACTION_DEFS.map((label, k) => {
+    const y = settingsActionY(k);
+    const line = svgEl("path", {
+      class: "line action hidden",
+      d: settingsActionConnectorPath(HUB.y, y, SETTINGS_ACTION.rightEdge),
+    }) as SVGPathElement;
+    const dot = svgEl("circle", {
+      class: "dot action hidden",
+      r: 3,
+      cx: SETTINGS_ACTION.rightEdge,
+      cy: y,
+    }) as SVGCircleElement;
+    svg.append(line, dot);
     const pill = document.createElement("div");
     pill.className = "pill settings-action hit";
     pill.textContent = label;
-    pill.style.left = `${SETTINGS.x}px`;
-    pill.style.top = `${settingsActionY(k) - SNIPPET.height / 2}px`;
+    pill.style.left = `${SETTINGS_ACTION.x}px`;
+    pill.style.top = `${y - SETTINGS_ACTION.height / 2}px`;
     root.appendChild(pill);
-    return { pill };
+    return { pill, line, dot };
   });
 
   return {
@@ -264,11 +283,24 @@ export function update(dom: OverlayDom, m: OverlayModel): void {
   dom.settingsPill.line.setAttribute("class", settingsVisible ? "line selected" : "line hidden");
   dom.settingsPill.dot.setAttribute("class", settingsVisible ? "dot selected" : "dot hidden");
 
-  // Settings actions exist only in the settings-actions phase.
-  dom.settingsActions.forEach(({ pill }, k) => {
+  // Settings actions exist only in the settings-actions phase, connected to
+  // the settings pill left edge (mirror of the snippet action fanout).
+  dom.settingsActions.forEach(({ pill, line, dot }, k) => {
     const visible = m.phase === "settings-actions";
     const selected = visible && k === m.actionSelected;
+    const y = settingsActionY(k);
     pill.classList.toggle("visible", visible);
     pill.classList.toggle("selected", selected);
+    line.setAttribute("d", settingsActionConnectorPath(HUB.y, y, SETTINGS_ACTION.rightEdge));
+    line.setAttribute(
+      "class",
+      visible ? (selected ? "line action selected" : "line action") : "line action hidden",
+    );
+    dot.setAttribute("cx", String(SETTINGS_ACTION.rightEdge));
+    dot.setAttribute("cy", String(y));
+    dot.setAttribute(
+      "class",
+      visible ? (selected ? "dot action selected" : "dot action hidden") : "dot action hidden",
+    );
   });
 }

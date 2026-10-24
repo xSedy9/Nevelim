@@ -9,6 +9,7 @@ import {
   ACTION,
   HUB,
   SETTINGS,
+  SETTINGS_ACTION,
   SNIPPET,
   actionConnectorPath,
   actionY,
@@ -16,8 +17,11 @@ import {
   connectorPath,
   isActionClick,
   isHubClick,
+  isSettingsActionClick,
   isSettingsClick,
   isSnippetClick,
+  settingsActionConnectorPath,
+  settingsActionY,
   settingsConnectorPath,
   slotY,
   sparklePath,
@@ -81,6 +85,34 @@ describe("settings (left side)", () => {
     expect(isSettingsClick(SETTINGS.x + 10, HUB.y)).toBe(true);
     expect(isSettingsClick(SETTINGS.x - 5, HUB.y)).toBe(false);
     expect(isSettingsClick(SETTINGS.x + 10, HUB.y + SETTINGS.height)).toBe(false);
+  });
+
+  it("settings actions mirror the snippet action column", () => {
+    expect(SETTINGS_ACTION.x + SETTINGS_ACTION.width).toBe(SETTINGS_ACTION.rightEdge);
+    // Same gap from the parent pill as the snippet actions have.
+    expect(SETTINGS.x - SETTINGS_ACTION.rightEdge).toBe(ACTION.x - (SNIPPET.x + SNIPPET.width));
+    expect(SETTINGS_ACTION.width).toBe(ACTION.width);
+    expect(SETTINGS_ACTION.height).toBe(ACTION.height);
+    expect(SETTINGS_ACTION.step).toBe(ACTION.step);
+    expect(SETTINGS_ACTION.x).toBeLessThan(SETTINGS.x);
+  });
+
+  it("settings action connector starts at the settings pill left edge", () => {
+    const d = settingsActionConnectorPath(HUB.y, 150, SETTINGS_ACTION.rightEdge);
+    expect(d.startsWith(`M ${SETTINGS.x} ${HUB.y}`)).toBe(true);
+    expect(d.endsWith(`${SETTINGS_ACTION.rightEdge} 150`)).toBe(true);
+  });
+
+  it("settings action rows fan out around the settings row", () => {
+    expect(settingsActionY(0)).toBe(HUB.y - 1.5 * SETTINGS_ACTION.step);
+    expect(settingsActionY(2)).toBe(HUB.y + 0.5 * SETTINGS_ACTION.step);
+  });
+
+  it("settings action hit covers the pill rect", () => {
+    const ay = settingsActionY(1);
+    expect(isSettingsActionClick(SETTINGS_ACTION.x + 5, ay, 1)).toBe(true);
+    expect(isSettingsActionClick(SETTINGS_ACTION.x + SETTINGS_ACTION.width + 5, ay, 1)).toBe(false);
+    expect(isSettingsActionClick(SETTINGS_ACTION.x + 5, ay + SETTINGS_ACTION.height, 1)).toBe(false);
   });
 });
 

@@ -241,12 +241,13 @@ svg .bracket.shown {
   transform: translateX(0);
 }
 
-/* Settings actions: full-size list items, identical to snippet pills. */
+/* Settings actions: mirror of the snippet action pills (210x40), entering
+   from the left like the settings pill itself. */
 .pill.settings-action {
-  width: 285px;
-  height: 42px;
+  width: 210px;
+  height: 40px;
   font-size: 15px;
-  transform: translateX(-35px);
+  transform: translateX(-30px);
 }
 
 .pill.settings-action.visible {

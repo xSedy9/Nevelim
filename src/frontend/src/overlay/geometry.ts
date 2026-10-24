@@ -6,13 +6,13 @@
  */
 
 /** Hub circle placement (radius reduced ~20% from the legacy 24 per user preference). */
-export const HUB = { x: 435, y: 290, r: 19 } as const;
+export const HUB = { x: 685, y: 290, r: 19 } as const;
 
 /** Snippet pill geometry and list layout. */
-export const SNIPPET = { x: 545, width: 285, height: 42, step: 46, visible: 5 } as const;
+export const SNIPPET = { x: 795, width: 285, height: 42, step: 46, visible: 5 } as const;
 
 /** Action pill geometry. */
-export const ACTION = { x: 875, width: 210, height: 40, step: 44 } as const;
+export const ACTION = { x: 1125, width: 210, height: 40, step: 44 } as const;
 
 /** Settings pill geometry: mirrors the snippet column on the LEFT of the hub. */
 export const SETTINGS = {
@@ -22,8 +22,18 @@ export const SETTINGS = {
   rightEdge: HUB.x - 110,
 } as const;
 
+/** Settings action pill geometry: mirrors the snippet actions on the LEFT of
+ * the settings pill (same 45px gap and 210px pill as the snippet actions). */
+export const SETTINGS_ACTION = {
+  x: SETTINGS.x - 45 - 210,
+  width: 210,
+  height: 40,
+  step: 44,
+  rightEdge: SETTINGS.x - 45,
+} as const;
+
 /** Logical size of the overlay canvas (must match the Tauri window). */
-export const CANVAS = { width: 1180, height: 580 } as const;
+export const CANVAS = { width: 1430, height: 580 } as const;
 
 /** Y position of the snippet slot holding template index `index`. */
 export function slotY(index: number, scroll: number): number {
@@ -58,6 +68,15 @@ export function actionConnectorPath(fromY: number, y: number, toX: number): stri
   const x0 = SNIPPET.x + SNIPPET.width;
   const c1x = x0 + 40;
   const c2x = toX - 40;
+  return `M ${x0} ${fromY} C ${c1x} ${fromY}, ${c2x} ${y}, ${toX} ${y}`;
+}
+
+/** Bezier connector path from the settings pill LEFT edge to a settings action
+ * pill (mirror of [`actionConnectorPath`]). */
+export function settingsActionConnectorPath(fromY: number, y: number, toX: number): string {
+  const x0 = SETTINGS.x;
+  const c1x = x0 - 40;
+  const c2x = toX + 40;
   return `M ${x0} ${fromY} C ${c1x} ${fromY}, ${c2x} ${y}, ${toX} ${y}`;
 }
 
@@ -152,19 +171,19 @@ export function isSettingsClick(x: number, y: number): boolean {
   );
 }
 
-/** Y position of settings action row `k` (stacked under the hub row). */
+/** Y position of settings action row `k` (stacked around the settings row). */
 export function settingsActionY(k: number): number {
-  return HUB.y + (k - 1.5) * 44;
+  return HUB.y + (k - 1.5) * SETTINGS_ACTION.step;
 }
 
 /** Whether a click lands inside settings action row `k`. */
 export function isSettingsActionClick(x: number, y: number, k: number): boolean {
   const ay = settingsActionY(k);
   return (
-    x >= SETTINGS.x &&
-    x <= SETTINGS.x + SETTINGS.width &&
-    y >= ay - SETTINGS.height / 2 &&
-    y <= ay + SETTINGS.height / 2
+    x >= SETTINGS_ACTION.x &&
+    x <= SETTINGS_ACTION.x + SETTINGS_ACTION.width &&
+    y >= ay - SETTINGS_ACTION.height / 2 &&
+    y <= ay + SETTINGS_ACTION.height / 2
   );
 }
 
