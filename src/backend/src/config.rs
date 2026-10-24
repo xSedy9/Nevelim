@@ -49,6 +49,8 @@ pub struct Config {
     pub openrouter_model: String,
     /// Whether selecting "paste" automatically pastes into the previous window.
     pub paste_automatically: bool,
+    /// Folder for template export; empty means the system Downloads folder.
+    pub export_dir: String,
     /// Recently used project folders (most recent first, capped).
     pub recent_projects: Vec<String>,
 }
@@ -66,6 +68,7 @@ impl Default for Config {
             openrouter_api_key: String::new(),
             openrouter_model: "google/gemini-2.5-flash".to_string(),
             paste_automatically: true,
+            export_dir: String::new(),
             recent_projects: Vec::new(),
         }
     }

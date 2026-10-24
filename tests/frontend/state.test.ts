@@ -75,11 +75,13 @@ describe("settings entry", () => {
     expect(m.phase).toBe("hub");
   });
 
-  it("is a leaf: expand and navigation do nothing inside", () => {
-    const s = model(4, { phase: "settings" });
-    expect(expand(s)).toBeNull();
-    expect(moveUp(s)).toBe(s);
-    expect(moveDown(s)).toBe(s);
+  it("expands to settings-actions; settings-actions is a leaf", () => {
+    const fan = expand(model(4, { phase: "settings" }))!;
+    expect(fan.phase).toBe("settings-actions");
+    expect(fan.actionSelected).toBe(0);
+    expect(expand(fan)).toBeNull();
+    expect(moveUp(fan).actionSelected).toBe(0);
+    expect(moveDown(fan).actionSelected).toBe(1);
   });
 });
 
