@@ -79,22 +79,15 @@ describe("settings entry", () => {
     const fan = expand(model(4, { phase: "settings" }))!;
     expect(fan.phase).toBe("settings-actions");
     expect(fan.actionSelected).toBe(0);
-    expect(fan.settingsExpanded).toBe(true);
     expect(expand(fan)).toBeNull();
     expect(moveUp(fan).actionSelected).toBe(0);
     expect(moveDown(fan).actionSelected).toBe(1);
   });
 
-  it("retracting from settings-actions keeps settingsExpanded for the exit", () => {
+  it("retracting from settings-actions returns to the settings pill", () => {
     const back = retract(model(4, { phase: "settings-actions" }))!;
     expect(back.phase).toBe("settings");
-    expect(back.settingsExpanded).toBe(true);
-    // Returning to the hub resets the flag.
-    expect(retract(back)!.settingsExpanded).toBe(false);
-  });
-
-  it("entering settings from the hub resets settingsExpanded", () => {
-    expect(openSettingsEntry(initialModel(4))!.settingsExpanded).toBe(false);
+    expect(retract(back)!.phase).toBe("hub");
   });
 });
 

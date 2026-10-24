@@ -305,21 +305,22 @@ export async function main(): Promise<void> {
         navDown();
         break;
       case "ArrowLeft":
+        // Left side of the canvas: Left dives deeper (executes the selected
+        // action), mirroring Right on the right side.
         if (session.model.phase === "hub") {
           const next = openSettingsEntry(session.model);
           if (next) apply(next);
-        } else if (session.model.phase === "settings") {
-          // Left reveals the actions the first time; afterwards it is a
-          // no-op — the branch is left via Right or Esc.
-          if (!session.model.settingsExpanded) {
-            expandSettingsActions();
-          }
+        } else if (
+          session.model.phase === "settings" ||
+          session.model.phase === "settings-actions"
+        ) {
+          onConfirm();
         } else {
           retractOne();
         }
         break;
       case "ArrowRight":
-        // In settings phases Right retracts (pill -> hub) instead of confirming.
+        // Right side: Right confirms; on the left side it retracts.
         if (session.model.phase === "settings" || session.model.phase === "settings-actions") {
           retractOne();
         } else {

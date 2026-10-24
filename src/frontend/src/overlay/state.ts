@@ -22,21 +22,11 @@ export interface OverlayModel {
   actionSelected: number;
   /** Total number of templates. */
   count: number;
-  /** Whether the settings actions were already revealed during this visit;
-   * a repeated Left on the settings pill then retracts further to the hub. */
-  settingsExpanded: boolean;
 }
 
 /** Creates the initial hub-only model. */
 export function initialModel(count: number): OverlayModel {
-  return {
-    phase: "hub",
-    selected: 0,
-    scroll: 0,
-    actionSelected: 0,
-    count: Math.max(0, count),
-    settingsExpanded: false,
-  };
+  return { phase: "hub", selected: 0, scroll: 0, actionSelected: 0, count: Math.max(0, count) };
 }
 
 /** Scrolls the viewport so `selected` stays within the visible window. */
@@ -74,7 +64,7 @@ export function moveDown(m: OverlayModel): OverlayModel {
 
 /** Opens the settings entry from the hub (Left arrow). Returns null elsewhere. */
 export function openSettingsEntry(m: OverlayModel): OverlayModel | null {
-  return m.phase === "hub" ? { ...m, phase: "settings", settingsExpanded: false } : null;
+  return m.phase === "hub" ? { ...m, phase: "settings" } : null;
 }
 
 /** Expands one level: hub -> snippets -> actions, settings -> settings actions.
@@ -83,9 +73,7 @@ export function expand(m: OverlayModel): OverlayModel | null {
   if (m.count === 0) return null;
   if (m.phase === "hub") return clampScroll({ ...m, phase: "snippets" });
   if (m.phase === "snippets") return { ...m, phase: "actions", actionSelected: 0 };
-  if (m.phase === "settings") {
-    return { ...m, phase: "settings-actions", settingsExpanded: true, actionSelected: 0 };
-  }
+  if (m.phase === "settings") return { ...m, phase: "settings-actions", actionSelected: 0 };
   return null;
 }
 
@@ -93,11 +81,8 @@ export function expand(m: OverlayModel): OverlayModel | null {
  * settings -> hub. Returns null at the hub. */
 export function retract(m: OverlayModel): OverlayModel | null {
   if (m.phase === "actions") return { ...m, phase: "snippets" };
-  if (m.phase === "settings-actions") {
-    return { ...m, phase: "settings", settingsExpanded: true };
-  }
-  if (m.phase === "settings") return { ...m, phase: "hub", settingsExpanded: false };
-  if (m.phase === "snippets") return { ...m, phase: "hub" };
+  if (m.phase === "settings-actions") return { ...m, phase: "settings" };
+  if (m.phase === "snippets" || m.phase === "settings") return { ...m, phase: "hub" };
   return null;
 }
 
