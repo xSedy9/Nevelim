@@ -88,6 +88,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn stamp_formats_valid_timestamp() {
+        let s = stamp();
+        assert_eq!(s.len(), 19);
+        assert_eq!(&s[4..5], "-");
+        assert_eq!(&s[7..8], "-");
+        assert_eq!(&s[10..11], " ");
+        assert_eq!(&s[13..14], ":");
+        assert_eq!(&s[16..17], ":");
+    }
+
+    #[test]
     fn stamp_formats_fixed_epoch() {
         // 2026-01-01 00:00:00 UTC = 1767225600.
         let secs = 1_767_225_600;
