@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Generates the application icon set for the desktop bundle.
 
-Draws the Quick Snippets emblem (dark circle with a white four-point sparkle,
+Draws the Nevelim emblem (dark circle with a white four-point sparkle,
 matching the overlay hub) and writes PNG + ICO variants used by Tauri.
 
 Usage: python gen_icons.py [output_dir]
