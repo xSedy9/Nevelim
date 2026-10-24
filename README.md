@@ -54,7 +54,7 @@ All data lives next to the executable (or in the project root during development
 ## Development
 
 Prerequisites: [Rust](https://rustup.rs) 1.78+, Node.js 20+, and the
-[Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS.
+[Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your OS (on Linux, `libxdo-dev` is also required for auto-paste).
 
 ```bash
 cd src/frontend
