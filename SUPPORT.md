@@ -1,6 +1,6 @@
 # Support
 
-Need help with Quick Snippets? Here is where to go:
+Need help with Nevelim? Here is where to go:
 
 - **Bug reports & feature requests** — open a
   [GitHub Issue](../../issues). Please include your OS version, app version and steps

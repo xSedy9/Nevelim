@@ -1,4 +1,4 @@
-# Quick Snippets
+# Nevelim
 
 A cross-platform hotkey-driven snippet launcher with AI-powered template adaptation.
 Press a global hotkey (default `alt+shift+v`) and a radial overlay appears right at your
