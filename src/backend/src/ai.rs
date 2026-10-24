@@ -167,12 +167,15 @@ pub async fn call_llm_chat(config: &Config, messages: &[ChatMessage]) -> CoreRes
             ),
         };
 
-    let resp = client
-        .post(url)
-        .header("Authorization", format!("Bearer {key}"))
-        .json(&body)
-        .send()
-        .await?;
+    // Gemini authenticates via the ?key= query parameter. Sending an
+    // Authorization header alongside it makes Google resolve the (invalid)
+    // Bearer credential instead and reject the request with 401, so the
+    // header is only set for the OpenAI-compatible providers.
+    let mut request = client.post(url).json(&body);
+    if provider != Provider::Gemini {
+        request = request.header("Authorization", format!("Bearer {key}"));
+    }
+    let resp = request.send().await?;
 
     if !resp.status().is_success() {
         let status = resp.status();
