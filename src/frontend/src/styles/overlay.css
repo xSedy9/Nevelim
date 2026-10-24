@@ -194,7 +194,7 @@ svg .bracket.shown {
 }
 
 .pill.selected {
-  background: rgba(255, 255, 255, 0.09);
+  background: #000000;
   border-color: #ffffff;
   color: #ffffff;
   box-shadow: 0 0 14px rgba(255, 255, 255, 0.12);
