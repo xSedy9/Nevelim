@@ -1,6 +1,6 @@
 /**
  * Frontend logging bridge: mirrors errors to the console and to the desktop
- * file log (`logs/quick-snippets.log`) via the `log_frontend` command.
+ * file log (`logs/nevelim.log`) via the `log_frontend` command.
  */
 
 import { api } from "./ipc";
