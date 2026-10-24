@@ -160,13 +160,15 @@ export const api = {
   closeSettings: (): Promise<void> => invoke("close_settings"),
   /** Packs config + templates into a timestamped zip in the export folder and opens it. */
   exportTemplates: (): Promise<string> => invoke("export_templates"),
-  /** Validates a candidate import file. */
+  /** Validates a candidate backup archive. */
   checkImportFile: (file: string): Promise<ImportCheckDto> =>
     invoke("check_import_file", { file }),
-  /** Copies a validated file into the templates directory. */
+  /** Restores a validated backup archive into templates and config. */
   importTemplate: (file: string): Promise<string> => invoke("import_template", { file }),
   /** Opens the import wizard window. */
   openImport: (): Promise<void> => invoke("open_import"),
   /** Closes the import wizard window. */
   closeImport: (): Promise<void> => invoke("close_import"),
+  /** Opens the native file picker filtered to backup archives (.zip). */
+  pickImportFile: (): Promise<string | null> => invoke("pick_import_file"),
 };

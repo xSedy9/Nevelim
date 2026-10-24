@@ -157,6 +157,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 16px;
   background: var(--surface);
+  cursor: pointer;
 }
 
 #import-root.ok .stage {
@@ -215,6 +216,15 @@ body {
 }
 
 /* ---------- Buttons ---------- */
+
+/* Gap between the file card and the action button mirrors the button's
+   horizontal padding (16px). */
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
 
 .btn {
   display: inline-flex;
