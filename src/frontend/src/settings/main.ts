@@ -193,7 +193,8 @@ function render(): void {
   const dirBtns = el("div", "dir-btns");
   const chooseDir = btn("btn-dark", "folder", "Выбрать…");
   chooseDir.addEventListener("click", () => void pickExportDir(cfg, refreshDirLabel, fab));
-  const resetDir = btn("btn-ghost", "x", "Сбросить");
+  const resetDir = btn("btn-ghost btn-icon", "x", "");
+  resetDir.title = "Сбросить на папку по умолчанию";
   resetDir.addEventListener("click", () => {
     cfg.export_dir = "";
     refreshDirLabel();
