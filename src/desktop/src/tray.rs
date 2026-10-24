@@ -46,8 +46,8 @@ impl TrayAction {
     /// Returns the user-facing label for the menu item.
     pub fn title(&self) -> &'static str {
         match self {
-            Self::Settings => "Настройки",
-            Self::Quit => "Выйти",
+            Self::Settings => "Settings",
+            Self::Quit => "Quit",
             Self::Unknown => "",
         }
     }
@@ -152,8 +152,8 @@ mod tests {
 
     #[test]
     fn tray_action_title() {
-        assert_eq!(TrayAction::Settings.title(), "Настройки");
-        assert_eq!(TrayAction::Quit.title(), "Выйти");
+        assert_eq!(TrayAction::Settings.title(), "Settings");
+        assert_eq!(TrayAction::Quit.title(), "Quit");
         assert_eq!(TrayAction::Unknown.title(), "");
     }
 
