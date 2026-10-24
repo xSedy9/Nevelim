@@ -36,6 +36,8 @@ pub fn run() {
             commands::get_modal_init,
             commands::get_settings,
             commands::save_settings,
+            commands::default_export_dir,
+            commands::test_provider,
             commands::open_settings,
             commands::close_settings,
             commands::export_templates,

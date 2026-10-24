@@ -14,7 +14,7 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
 use quick_snippets_core::ai::{self, ChatMessage};
-use quick_snippets_core::config::{self, Config};
+use quick_snippets_core::config::{self, Config, Provider};
 use quick_snippets_core::error::CoreError;
 use quick_snippets_core::export;
 use quick_snippets_core::history;
@@ -149,6 +149,61 @@ fn resolve_export_dir(cfg: &Config) -> PathBuf {
     } else {
         PathBuf::from(configured)
     }
+}
+
+/// Default export folder (system Downloads) with the home directory
+/// abbreviated to `~` and forward slashes, for display in the settings UI.
+#[tauri::command]
+pub fn default_export_dir() -> String {
+    let folder = dirs::download_dir().unwrap_or_else(base_dir);
+    let text = match dirs::home_dir() {
+        Some(home) if folder.starts_with(&home) => {
+            let rest = folder
+                .strip_prefix(&home)
+                .unwrap_or(&folder)
+                .to_string_lossy()
+                .trim_start_matches(['/', '\\'])
+                .to_string();
+            format!("~/{rest}")
+        }
+        _ => folder.to_string_lossy().to_string(),
+    };
+    text.replace('\\', "/")
+}
+
+/// Sends a minimal chat request to the given provider credentials and reports
+/// whether it answers.
+///
+/// Uses the provider/key/model passed from the settings form (not the saved
+/// config), so the check reflects unsaved edits.
+#[tauri::command]
+pub async fn test_provider(provider: String, key: String, model: String) -> Result<String, String> {
+    let mut config = config::load_or_default(&config::resolve_config_path());
+    config.provider = match provider.as_str() {
+        "gemini" => Provider::Gemini,
+        "openai" => Provider::OpenAi,
+        "openrouter" => Provider::OpenRouter,
+        _ => return Err("Неизвестный провайдер.".to_string()),
+    };
+    match config.provider {
+        Provider::Gemini => {
+            config.gemini_api_key = key;
+            config.gemini_model = model;
+        }
+        Provider::OpenAi => {
+            config.openai_api_key = key;
+            config.openai_model = model;
+        }
+        Provider::OpenRouter => {
+            config.openrouter_api_key = key;
+            config.openrouter_model = model;
+        }
+    }
+    let messages = vec![ChatMessage::new("user", "ping")];
+    ai::call_llm_chat(&config, &messages)
+        .await
+        .map(|_| "ok".to_string())
+        .map_err(err_to_string)
 }
 
 /// Copies every template into the export folder.
