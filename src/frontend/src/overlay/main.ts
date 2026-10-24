@@ -6,7 +6,7 @@
 import { listen } from "@tauri-apps/api/event";
 
 import { api, type AppStateDto } from "../shared/ipc";
-import { SNIPPET, isActionClick, isHubClick, isSnippetClick, slotY } from "./geometry";
+import { SNIPPET, isActionClick, isHubClick, isSettingsClick, isSnippetClick, slotY } from "./geometry";
 import {
   initialModel,
   moveDown,
@@ -306,7 +306,7 @@ export async function main(): Promise<void> {
 export function isHit(x: number, y: number): boolean {
   if (isHubClick(x, y)) return true;
   if (session.model.phase === "settings") {
-    return isSnippetClick(x, y, 2, 0);
+    return isSettingsClick(x, y);
   }
   for (let slot = 0; slot < SNIPPET.visible; slot++) {
     const idx = session.model.scroll + slot;

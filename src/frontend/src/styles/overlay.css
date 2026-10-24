@@ -230,6 +230,15 @@ svg .bracket.shown {
   transform: translateX(0);
 }
 
+.pill.settings {
+  width: 285px;
+  transform: translateX(-35px);
+}
+
+.pill.settings.visible {
+  transform: translateX(0);
+}
+
 /* ---------- Closing state ---------- */
 
 #overlay-root.closing .pill {

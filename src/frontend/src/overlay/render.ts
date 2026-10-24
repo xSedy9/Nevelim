@@ -10,11 +10,13 @@ import {
   ACTION,
   CANVAS,
   HUB,
+  SETTINGS,
   SNIPPET,
   actionConnectorPath,
   actionY,
   bracketPath,
   connectorPath,
+  settingsConnectorPath,
   slotY,
   sparklePath,
 } from "./geometry";
@@ -156,18 +158,18 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
   // Settings entry pill (Left arrow from the hub; no brackets by design).
   const sLine = svgEl("path", {
     class: "line hidden",
-    d: connectorPath(HUB.y, SNIPPET.x),
+    d: settingsConnectorPath(HUB.y),
   }) as SVGPathElement;
   const sDot = svgEl("circle", {
     class: "dot hidden",
     r: 3,
-    cx: SNIPPET.x,
+    cx: SETTINGS.rightEdge,
     cy: HUB.y,
   }) as SVGCircleElement;
   const settingsPillEl = document.createElement("div");
   settingsPillEl.className = "pill settings hit";
   settingsPillEl.innerHTML = `${icon("sliders", 16)}<span class="label">Настройки</span>`;
-  settingsPillEl.style.left = `${SNIPPET.x}px`;
+  settingsPillEl.style.left = `${SETTINGS.x}px`;
   settingsPillEl.style.top = `${HUB.y - SNIPPET.height / 2}px`;
   root.appendChild(settingsPillEl);
   svg.append(sLine, sDot);

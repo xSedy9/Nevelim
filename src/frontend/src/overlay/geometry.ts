@@ -6,16 +6,24 @@
  */
 
 /** Hub circle placement (radius reduced ~20% from the legacy 24 per user preference). */
-export const HUB = { x: 75, y: 290, r: 19 } as const;
+export const HUB = { x: 435, y: 290, r: 19 } as const;
 
 /** Snippet pill geometry and list layout. */
-export const SNIPPET = { x: 185, width: 285, height: 42, step: 46, visible: 5 } as const;
+export const SNIPPET = { x: 545, width: 285, height: 42, step: 46, visible: 5 } as const;
 
 /** Action pill geometry. */
-export const ACTION = { x: 515, width: 210, height: 40, step: 44 } as const;
+export const ACTION = { x: 875, width: 210, height: 40, step: 44 } as const;
+
+/** Settings pill geometry: mirrors the snippet column on the LEFT of the hub. */
+export const SETTINGS = {
+  x: HUB.x - 110 - 285,
+  width: 285,
+  height: 42,
+  rightEdge: HUB.x - 110,
+} as const;
 
 /** Logical size of the overlay canvas (must match the Tauri window). */
-export const CANVAS = { width: 820, height: 580 } as const;
+export const CANVAS = { width: 1180, height: 580 } as const;
 
 /** Y position of the snippet slot holding template index `index`. */
 export function slotY(index: number, scroll: number): number {
@@ -34,6 +42,15 @@ export function connectorPath(y: number, toX: number): string {
   const c1x = x0 + 40;
   const c2x = toX - 40;
   return `M ${x0} ${y0} C ${c1x} ${y0}, ${c2x} ${y}, ${toX} ${y}`;
+}
+
+/** Bezier connector path from the hub LEFT edge to the settings pill right edge. */
+export function settingsConnectorPath(y: number): string {
+  const x0 = HUB.x - HUB.r;
+  const y0 = HUB.y;
+  const c1x = x0 - 40;
+  const c2x = SETTINGS.rightEdge + 40;
+  return `M ${x0} ${y0} C ${c1x} ${y0}, ${c2x} ${y}, ${SETTINGS.rightEdge} ${y}`;
 }
 
 /** Bezier connector path from a snippet right edge to an action pill. */
@@ -122,6 +139,16 @@ export function isSnippetClick(x: number, y: number, slot: number, scroll: numbe
     x <= SNIPPET.x + SNIPPET.width &&
     y >= sy - SNIPPET.height / 2 &&
     y <= sy + SNIPPET.height / 2
+  );
+}
+
+/** Whether a click lands inside the settings pill. */
+export function isSettingsClick(x: number, y: number): boolean {
+  return (
+    x >= SETTINGS.x &&
+    x <= SETTINGS.x + SETTINGS.width &&
+    y >= HUB.y - SETTINGS.height / 2 &&
+    y <= HUB.y + SETTINGS.height / 2
   );
 }
 

@@ -9,11 +9,11 @@ use crate::focus;
 use crate::state::AppState;
 
 /// Logical (CSS px) width of the overlay canvas. Must match the frontend layout.
-pub const OVERLAY_W: f64 = 820.0;
+pub const OVERLAY_W: f64 = 1180.0;
 /// Logical (CSS px) height of the overlay canvas. Must match the frontend layout.
 pub const OVERLAY_H: f64 = 580.0;
 /// Logical X of the hub circle center inside the canvas.
-pub const HUB_X: f64 = 75.0;
+pub const HUB_X: f64 = 435.0;
 /// Logical Y of the hub circle center inside the canvas.
 pub const HUB_Y: f64 = 290.0;
 /// Margin (physical px) kept from monitor edges when clamping the window.
