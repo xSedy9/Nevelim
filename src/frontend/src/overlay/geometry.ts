@@ -81,16 +81,22 @@ export function settingsActionConnectorPath(fromY: number, y: number, toX: numbe
   return `M ${x0} ${fromY} C ${c1x} ${fromY}, ${c2x} ${y}, ${toX} ${y}`;
 }
 
-/** Top/bottom square bracket polyline around the visible snippet list. */
-export function bracketPath(kind: "top" | "bottom"): string {
+/** Top/bottom square bracket polyline around the visible snippet list.
+ *
+ * @param kind "top" | "bottom"
+ * @param visibleCount Number of visible items to frame (1..5, defaults to SNIPPET.visible).
+ */
+export function bracketPath(kind: "top" | "bottom", visibleCount: number = SNIPPET.visible): string {
   const inset = 35;
   const arm = 6;
   const x1 = SNIPPET.x + inset;
   const x2 = SNIPPET.x + SNIPPET.width - inset;
+  const clamped = Math.min(Math.max(1, visibleCount), SNIPPET.visible);
+  const bottomSlot = clamped - 1;
   const y =
     kind === "top"
       ? slotY(0, 0) - SNIPPET.height / 2 - 14
-      : slotY(SNIPPET.visible - 1, 0) + SNIPPET.height / 2 + 14;
+      : slotY(bottomSlot, 0) + SNIPPET.height / 2 + 14;
   const dir = kind === "top" ? arm : -arm;
   return `M ${x1} ${y + dir} L ${x1} ${y} L ${x2} ${y} L ${x2} ${y + dir}`;
 }

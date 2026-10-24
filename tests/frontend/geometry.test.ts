@@ -61,6 +61,27 @@ describe("paths", () => {
     expect(top.split(" ").length).toBeGreaterThan(6);
   });
 
+  it("brackets adapt bottom position to visible snippet count (1 to 5)", () => {
+    const b1 = bracketPath("bottom", 1);
+    const expectedY1 = slotY(0, 0) + SNIPPET.height / 2 + 14;
+    expect(b1).toContain(`L ${SNIPPET.x + 35} ${expectedY1}`);
+
+    const b2 = bracketPath("bottom", 2);
+    const expectedY2 = slotY(1, 0) + SNIPPET.height / 2 + 14;
+    expect(b2).toContain(`L ${SNIPPET.x + 35} ${expectedY2}`);
+
+    const b3 = bracketPath("bottom", 3);
+    const expectedY3 = slotY(2, 0) + SNIPPET.height / 2 + 14;
+    expect(b3).toContain(`L ${SNIPPET.x + 35} ${expectedY3}`);
+
+    const b5 = bracketPath("bottom", 5);
+    const expectedY5 = slotY(4, 0) + SNIPPET.height / 2 + 14;
+    expect(b5).toContain(`L ${SNIPPET.x + 35} ${expectedY5}`);
+
+    expect(bracketPath("bottom", 0)).toBe(b1);
+    expect(bracketPath("bottom", 10)).toBe(b5);
+  });
+
   it("sparkle path is a closed 4-tip star", () => {
     const d = sparklePath(32, 32, 18.5);
     expect(d.startsWith("M 32 13.5")).toBe(true); // 32 - 18.5

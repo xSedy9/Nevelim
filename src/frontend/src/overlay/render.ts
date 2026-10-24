@@ -143,10 +143,11 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
     return { pill, line, dot };
   });
 
-  // Brackets.
+  // Brackets (adapts to the number of templates up to 5).
+  const visibleCount = Math.min(templates.length, SNIPPET.visible);
   const brackets: [SVGPathElement, SVGPathElement] = [
-    svgEl("path", { class: "bracket", d: bracketPath("top") }) as SVGPathElement,
-    svgEl("path", { class: "bracket", d: bracketPath("bottom") }) as SVGPathElement,
+    svgEl("path", { class: "bracket", d: bracketPath("top", visibleCount) }) as SVGPathElement,
+    svgEl("path", { class: "bracket", d: bracketPath("bottom", visibleCount) }) as SVGPathElement,
   ];
   svg.append(...brackets);
 
@@ -257,7 +258,12 @@ export function update(dom: OverlayDom, m: OverlayModel): void {
     dot.setAttribute("class", visible ? (selected ? "dot selected" : "dot") : "dot hidden");
   });
 
-  dom.brackets.forEach((b) => b.setAttribute("class", snippetsVisible ? "bracket" : "bracket hidden"));
+  const visibleCount = Math.min(m.count, SNIPPET.visible);
+  dom.brackets[0].setAttribute("d", bracketPath("top", visibleCount));
+  dom.brackets[1].setAttribute("d", bracketPath("bottom", visibleCount));
+  dom.brackets.forEach((b) =>
+    b.setAttribute("class", snippetsVisible && m.count > 0 ? "bracket" : "bracket hidden"),
+  );
 
   // Action pills exist only in the actions phase, attached to the selected slot.
   const fromY = slotY(m.selected, m.scroll);
