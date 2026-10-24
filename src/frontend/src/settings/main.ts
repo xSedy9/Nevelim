@@ -6,6 +6,7 @@
  * hotkey. Black-and-white minimalist UI per the project design rules.
  */
 
+import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type AppConfig, type ProviderId } from "../shared/ipc";
@@ -278,12 +279,21 @@ function close(): void {
   void api.closeSettings();
 }
 
-/** Entry point. */
-export async function main(): Promise<void> {
-  session.root = document.getElementById("settings-root") as HTMLDivElement;
+/** Re-fetches the config from the backend and re-renders the form. */
+async function reload(): Promise<void> {
   session.cfg = await api.getSettings();
   session.defaultDir = await api.defaultExportDir();
   render();
+}
+
+/** Entry point. */
+export async function main(): Promise<void> {
+  session.root = document.getElementById("settings-root") as HTMLDivElement;
+  await reload();
+
+  // Re-opening the window re-reads config.json so manual edits and changes
+  // made elsewhere are always reflected.
+  await listen("settings-shown", () => void reload());
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !session.busy) close();

@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use serde::Serialize;
-use tauri::{AppHandle, Manager, State, WebviewUrl};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
@@ -114,6 +114,9 @@ pub async fn open_settings(app: AppHandle) -> Result<(), String> {
     if let Some(existing) = app.get_webview_window("settings") {
         let _ = existing.show();
         let _ = existing.set_focus();
+        // The form must reflect config.json edits made while the window was
+        // closed or edited by hand.
+        let _ = app.emit_to("settings", "settings-shown", ());
         return Ok(());
     }
     tauri::WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings.html".into()))
