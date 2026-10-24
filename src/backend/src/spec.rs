@@ -144,7 +144,11 @@ mod tests {
     #[test]
     fn check_size_allows_within_limit_and_reports_overflow() {
         assert!(check_size(&"a".repeat(MAX_SPEC_FILE_BYTES)).is_ok());
-        let err = check_size(&(0..MAX_SPEC_FILE_BYTES + 10).map(|_| "ж").collect::<String>());
+        let err = check_size(
+            &(0..MAX_SPEC_FILE_BYTES + 10)
+                .map(|_| "ж")
+                .collect::<String>(),
+        );
         let msg = err.unwrap_err();
         assert!(msg.contains("слишком большой"));
         assert!(msg.contains("лимит"));

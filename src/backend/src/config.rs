@@ -133,7 +133,12 @@ pub fn pick_base_dir(candidates: &[PathBuf]) -> PathBuf {
         .iter()
         .find(|c| c.join("templates").is_dir() || c.join("config.json").is_file())
         .cloned()
-        .unwrap_or_else(|| candidates.first().cloned().unwrap_or_else(|| PathBuf::from(".")))
+        .unwrap_or_else(|| {
+            candidates
+                .first()
+                .cloned()
+                .unwrap_or_else(|| PathBuf::from("."))
+        })
 }
 
 /// Resolves the config file actually in use.
