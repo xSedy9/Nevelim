@@ -276,8 +276,9 @@ export function update(dom: OverlayDom, m: OverlayModel): void {
     dot.setAttribute("class", visible ? (selected ? "dot action selected" : "dot action") : "dot action hidden");
   });
 
-  // Settings entry pill exists only in the settings phase (center slot).
-  const settingsVisible = m.phase === "settings";
+  // Settings entry pill stays visible while its actions are open (same as the
+  // selected snippet staying visible in the actions phase).
+  const settingsVisible = m.phase === "settings" || m.phase === "settings-actions";
   dom.settingsPill.pill.classList.toggle("visible", settingsVisible);
   dom.settingsPill.pill.classList.toggle("selected", settingsVisible);
   dom.settingsPill.line.setAttribute("class", settingsVisible ? "line selected" : "line hidden");
