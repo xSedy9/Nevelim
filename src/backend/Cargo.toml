@@ -1,6 +1,6 @@
 [package]
 name = "quick-snippets-core"
-description = "Quick Snippets core business logic: config, templates, specifications, AI providers, history, paste injection"
+description = "Nevelim core business logic: config, templates, specifications, AI providers, history, paste injection"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

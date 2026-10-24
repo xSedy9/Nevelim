@@ -1,6 +1,6 @@
 [package]
 name = "quick-snippets-desktop"
-description = "Quick Snippets desktop shell: Tauri v2 entry point, windows, hotkeys, IPC"
+description = "Nevelim desktop shell: Tauri v2 entry point, windows, hotkeys, IPC"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,4 +1,4 @@
-//! Quick Snippets desktop shell.
+//! Nevelim desktop shell.
 //!
 //! Wires the Tauri runtime together: creates the overlay window, registers the
 //! global hotkey, enforces single-instance behaviour and exposes the IPC
@@ -72,7 +72,7 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running Quick Snippets");
+        .expect("error while running Nevelim");
 }
 
 /// Loads configuration from the resolved path, falling back to defaults.

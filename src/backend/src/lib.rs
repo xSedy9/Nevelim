@@ -1,4 +1,4 @@
-//! Quick Snippets core business logic.
+//! Nevelim core business logic.
 //!
 //! This crate is intentionally free of any Tauri/UI dependency so it can be
 //! tested in isolation. It hosts configuration management, template scanning,

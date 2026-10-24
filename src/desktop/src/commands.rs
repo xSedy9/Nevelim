@@ -129,7 +129,7 @@ pub async fn open_settings(app: AppHandle) -> Result<(), String> {
         return Ok(());
     }
     tauri::WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings.html".into()))
-        .title("Quick Snippets — Настройки")
+        .title("Nevelim — Настройки")
         .inner_size(480.0, 560.0)
         .transparent(true)
         .decorations(false)
@@ -619,7 +619,7 @@ pub async fn open_modal(
         return Ok(());
     }
     tauri::WebviewWindowBuilder::new(&app, "modal", WebviewUrl::App("modal.html".into()))
-        .title("Quick Snippets")
+        .title("Nevelim")
         .inner_size(476.0, 371.0)
         .transparent(true)
         .decorations(false)

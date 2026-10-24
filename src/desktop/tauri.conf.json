@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Quick Snippets",
+  "productName": "Nevelim",
   "version": "0.1.0",
-  "identifier": "com.quicksnippets.app",
+  "identifier": "com.nevelim.app",
   "build": {
     "beforeDevCommand": {
       "script": "npm run dev",
