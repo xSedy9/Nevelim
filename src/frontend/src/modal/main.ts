@@ -99,17 +99,12 @@ function promptStrip(frame: HTMLDivElement, text: string): void {
   frame.appendChild(p);
 }
 
-/** Applies the red error border state for 3.5 s. */
-async function errorBorder(): Promise<void> {
-  session.root.classList.add("error");
-  await new Promise((r) => setTimeout(r, 3500));
-  session.root.classList.remove("error");
-}
-
 /** Closes the modal window. */
 function close(): void {
   void api.closeModal();
 }
+
+/** Closes the modal window. */
 
 // ==========================================
 // PHASE 1: SOURCE SELECTION
@@ -212,17 +207,19 @@ async function pickFileFlow(): Promise<void> {
 // ==========================================
 
 /** Renders the specification status: full-space panel (icon + name + size),
- * adapt action pinned to the bottom, red error note above on failure. */
-function renderSpec(spec: SpecDto, isFolder: boolean): void {
+ * action pinned to the bottom. `errorMessage` adds a persistent red note and
+ * keeps the frame border red. */
+function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): void {
   session.phase = "spec";
   session.specIsFolder = isFolder;
   const frame = clear(renderSelect);
   frame.classList.add("shown");
   session.root.classList.remove("ok");
-  if (!spec.found) {
+  const failed = !spec.found || errorMessage !== undefined;
+  if (failed) {
     session.root.classList.add("error");
     const err = el("div", "err-line");
-    err.textContent = spec.error ?? "Неизвестная ошибка";
+    err.textContent = errorMessage ?? spec.error ?? "Неизвестная ошибка";
     frame.appendChild(err);
   } else {
     session.root.classList.add("ok");
@@ -260,7 +257,22 @@ function renderSpec(spec: SpecDto, isFolder: boolean): void {
   frame.appendChild(area);
 }
 
-/** Runs the AI adaptation with a spinner, then shows the result phase. */
+/** Normalizes an AI call failure into a user-facing message. */
+function aiErrorText(e: unknown): string {
+  const raw = String(e);
+  if (/api[-_ ]?key|unauthorized|401|403/i.test(raw)) {
+    return "Проверьте API-ключ в config.json или доступность провайдера.";
+  }
+  if (/timed out|timeout/i.test(raw)) {
+    return "Таймаут ответа нейросети. Попробуйте ещё раз.";
+  }
+  return raw;
+}
+
+/** Runs the AI adaptation with a spinner, then shows the result phase.
+ *
+ * On failure re-renders the spec view with a persistent red error note.
+ */
 async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
   if (session.busy || !session.spec?.found) return;
   const spec = session.spec;
@@ -270,11 +282,9 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
     const result = await api.adaptTemplate(spec.content, session.init?.snippet_content ?? "");
     session.chat = [];
     renderResult(result);
-  } catch {
-    adapt.innerHTML = `${icon("warning", 15)}<span>Ошибка</span>`;
-    session.root.classList.add("error");
-    await errorBorder();
-    renderSpec(spec, session.specIsFolder);
+  } catch (e) {
+    console.error("adapt failed:", e);
+    renderSpec(spec, session.specIsFolder, aiErrorText(e));
   } finally {
     restore();
     session.busy = false;
@@ -341,6 +351,23 @@ function renderResult(text: string): void {
   frame.appendChild(footer);
 }
 
+/** Shows a transient red error note above the chat bar (auto-dismisses). */
+function flashError(msg: string): void {
+  session.root.classList.add("error");
+  const chat = session.root.querySelector(".chat");
+  const err = el("div", "err-line");
+  err.textContent = msg;
+  if (chat?.parentElement) {
+    chat.parentElement.insertBefore(err, chat);
+  } else {
+    session.root.appendChild(err);
+  }
+  setTimeout(() => {
+    err.remove();
+    session.root.classList.remove("error");
+  }, 4500);
+}
+
 /** Sends the refinement prompt and swaps the result text. */
 async function refineFlow(
   input: HTMLInputElement,
@@ -361,9 +388,9 @@ async function refineFlow(
     session.chat.push({ role: "assistant", content: res });
     ta.value = res;
     input.value = "";
-  } catch {
-    session.root.classList.add("error");
-    await errorBorder();
+  } catch (e) {
+    console.error("refine failed:", e);
+    flashError(aiErrorText(e));
   } finally {
     restore();
     session.busy = false;
