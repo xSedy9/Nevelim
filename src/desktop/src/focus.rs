@@ -14,14 +14,21 @@ pub type FocusHandle = ();
 
 /// Captures the handle of the currently focused window.
 #[cfg(windows)]
-pub fn capture_foreground() -> FocusHandle {
+pub fn capture_foreground() -> Option<FocusHandle> {
     use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
-    unsafe { GetForegroundWindow().0 as isize }
+    let hwnd = unsafe { GetForegroundWindow().0 as isize };
+    if hwnd != 0 {
+        Some(hwnd)
+    } else {
+        None
+    }
 }
 
 /// Captures the handle of the currently focused window (no-op on this platform).
 #[cfg(not(windows))]
-pub fn capture_foreground() -> FocusHandle {}
+pub fn capture_foreground() -> Option<FocusHandle> {
+    None
+}
 
 /// Restores focus to a previously captured window.
 #[cfg(windows)]
@@ -38,3 +45,16 @@ pub fn restore_focus(handle: FocusHandle) {
 /// Restores focus to a previously captured window (no-op on this platform).
 #[cfg(not(windows))]
 pub fn restore_focus(_handle: FocusHandle) {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capture_and_restore_smoke() {
+        let handle = capture_foreground();
+        if let Some(h) = handle {
+            restore_focus(h);
+        }
+    }
+}

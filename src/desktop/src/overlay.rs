@@ -112,7 +112,7 @@ pub fn show_at_cursor(app: &AppHandle) {
     };
     {
         let state = app.state::<AppState>();
-        *state.prev_focus.lock().unwrap() = Some(focus::capture_foreground());
+        *state.prev_focus.lock().unwrap() = focus::capture_foreground();
         *state.overlay_visible.lock().unwrap() = true;
         *state.overlay_input_enabled.lock().unwrap() = false;
     }
