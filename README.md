@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="src/desktop/icons/icon.png" alt="Nevelim Logo" width="128" height="128" />
+</p>
+
 # Nevelim
 
 A cross-platform hotkey-driven snippet launcher with AI-powered template adaptation.
