@@ -282,6 +282,7 @@ button:focus-visible {
 .dir-btns .btn.btn-icon {
   width: 30px;
   padding: 0;
+  gap: 0;
   justify-content: center;
 }
 

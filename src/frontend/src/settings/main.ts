@@ -72,7 +72,8 @@ function sectionLabel(frame: HTMLElement, text: string): void {
 /** Builds a button with an optional leading SVG icon and a text label. */
 function btn(cls: string, iconName: IconName | null, label: string): HTMLButtonElement {
   const b = el("button", `btn ${cls}`);
-  b.innerHTML = `${iconName ? icon(iconName, 14) : ""}<span>${label}</span>`;
+  b.innerHTML =
+    `${iconName ? icon(iconName, 14) : ""}` + (label ? `<span>${label}</span>` : "");
   return b;
 }
 
