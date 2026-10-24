@@ -82,6 +82,64 @@ pub fn get_modal_init(state: State<'_, AppState>) -> Option<ModalInit> {
     state.modal_init.lock().unwrap().clone()
 }
 
+/// Returns the full configuration for the settings window.
+///
+/// Unlike [`get_app_state`], API keys are included: the settings window is the
+/// one place where the user edits them (local desktop app, no web context).
+#[tauri::command]
+pub fn get_settings() -> Config {
+    config::load_or_default(&config::resolve_config_path())
+}
+
+/// Saves the configuration and re-registers the global hotkey.
+#[tauri::command]
+pub fn save_settings(app: AppHandle, config: Config) -> Result<(), String> {
+    if quick_snippets_core::hotkey::parse_hotkey(&config.hotkey).is_none() {
+        return Err("Некорректный формат хоткея. Пример: alt+shift+v".to_string());
+    }
+    config
+        .save_to(&config::resolve_config_path())
+        .map_err(|e| e.to_string())?;
+    crate::register_hotkey_from_config(&app);
+    Ok(())
+}
+
+/// Opens (or focuses) the settings window.
+///
+/// Async on purpose: window creation from a sync command deadlocks the event
+/// loop on Windows (same as [`open_modal`]).
+#[tauri::command]
+pub async fn open_settings(app: AppHandle) -> Result<(), String> {
+    if let Some(existing) = app.get_webview_window("settings") {
+        let _ = existing.show();
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+    tauri::WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings.html".into()))
+        .title("Quick Snippets — Настройки")
+        .inner_size(480.0, 560.0)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .skip_taskbar(true)
+        .resizable(false)
+        .center()
+        .build()
+        .map(|_| ())
+        .map_err(|e| {
+            eprintln!("[settings] failed to open: {e}");
+            e.to_string()
+        })
+}
+
+/// Closes the settings window.
+#[tauri::command]
+pub fn close_settings(app: AppHandle) {
+    if let Some(win) = app.get_webview_window("settings") {
+        let _ = win.close();
+    }
+}
+
 /// Runs the AI adaptation of a template against a specification.
 #[tauri::command]
 pub async fn adapt_template(

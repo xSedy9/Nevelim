@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Adaptation modal entry point.
  *
  * Modern dark UI driven by inline SVG icons: phase 1 - source selection,
@@ -10,7 +10,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type ChatMessage, type ModalInit, type SpecDto } from "../shared/ipc";
 import { formatSize } from "../shared/format";
-import { icon, type IconName } from "./icons";
+import { icon, type IconName } from "../shared/icons";
 
 /** Modal phases. */
 type Phase = "select" | "folder" | "file" | "spec" | "result";

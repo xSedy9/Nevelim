@@ -1,5 +1,5 @@
 /**
- * Inline SVG icon set for the modal UI.
+ * Inline SVG icon set shared by all windows (modal, settings, overlay).
  *
  * Stroke-based lucide-style glyphs, 24x24 viewBox, `currentColor` so icons
  * inherit text color. No icon fonts, no emoji.
@@ -15,7 +15,8 @@ export type IconName =
   | "send"
   | "sparkle"
   | "warning"
-  | "zap";
+  | "zap"
+  | "sliders";
 
 /** SVG inner markup per icon name (paths only; wrapper is added by `icon`). */
 const PATHS: Record<IconName, string> = {
@@ -34,6 +35,8 @@ const PATHS: Record<IconName, string> = {
   warning:
     '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  sliders:
+    '<path d="M21 4h-7"/><path d="M10 4H3"/><path d="M21 12h-9"/><path d="M8 12H3"/><path d="M21 20h-5"/><path d="M12 20H3"/><path d="M14 2v4"/><path d="M8 10v4"/><path d="M16 18v4"/>',
 };
 
 /**

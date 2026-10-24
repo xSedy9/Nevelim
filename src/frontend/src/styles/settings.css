@@ -1,0 +1,340 @@
+/* Settings window - minimalist black-and-white UI.
+   Layered via white-alpha on black, segmented control, custom switch. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.3);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.5);
+  --ok: #22c55e;
+  --err: #ef4444;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  user-select: none;
+  color: var(--text);
+  /* Ultra-thin custom scrollbars per the design rules. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+#settings-root {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+}
+
+#settings-root.error .frame {
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 46px 18px 16px;
+  overflow-y: auto;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+    #000000;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+  transition:
+    opacity 0.22s ease-out,
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.3, 1),
+    border-color 0.2s;
+}
+
+.frame.shown {
+  opacity: 1;
+  transform: none;
+}
+
+.frame::-webkit-scrollbar {
+  width: 6px;
+}
+
+.frame::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.frame::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+
+.frame::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.title span:first-child {
+  color: var(--muted);
+  display: inline-flex;
+}
+
+.s-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  user-select: text;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.input.mono {
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+
+.input:focus {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: -2px;
+}
+
+/* ---------- Segmented control ---------- */
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.seg-btn {
+  flex: 1;
+  height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+}
+
+.seg-btn:hover {
+  color: var(--text);
+}
+
+.seg-btn:active {
+  transform: scale(0.98);
+}
+
+.seg-btn.active {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* ---------- Toggle switch ---------- */
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toggle-label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.switch input {
+  display: none;
+}
+
+.switch .track {
+  display: block;
+  width: 38px;
+  height: 20px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.18s;
+}
+
+.switch .track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.switch input:checked + .track {
+  background: #ffffff;
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(18px);
+  background: #000000;
+}
+
+/* ---------- Footer ---------- */
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.err {
+  color: var(--err);
+  font-size: 11.5px;
+  text-align: center;
+  min-height: 0;
+  word-break: break-word;
+}
+
+.err:empty {
+  display: none;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+  background: #ffffff;
+  color: #000000;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s,
+    transform 0.12s,
+    opacity 0.15s;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary.loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.15s;
+}
+
+.icon-btn:hover {
+  color: #ffffff;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

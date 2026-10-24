@@ -67,6 +67,35 @@ export interface ModalInit {
   snippet_content: string;
 }
 
+/** AI provider selector (matches core::config::Provider). */
+export type ProviderId = "gemini" | "openai" | "openrouter";
+
+/** Full application configuration (settings window reads and edits it). */
+export interface AppConfig {
+  /** Global hotkey string, e.g. "alt+shift+v". */
+  hotkey: string;
+  /** Selected AI provider. */
+  provider: ProviderId;
+  /** Gemini API key. */
+  gemini_api_key: string;
+  /** Gemini model id. */
+  gemini_model: string;
+  /** OpenAI API key. */
+  openai_api_key: string;
+  /** OpenAI API base URL. */
+  openai_api_base: string;
+  /** OpenAI model id. */
+  openai_model: string;
+  /** OpenRouter API key. */
+  openrouter_api_key: string;
+  /** OpenRouter model id. */
+  openrouter_model: string;
+  /** Auto-paste behaviour flag. */
+  paste_automatically: boolean;
+  /** Recently used project folders. */
+  recent_projects: string[];
+}
+
 /** All backend commands used by the UI. */
 export const api = {
   /** Loads the sanitized app state (config + templates). */
@@ -107,4 +136,12 @@ export const api = {
   closeModal: (): Promise<void> => invoke("close_modal"),
   /** Loads the pending modal payload, if any. */
   getModalInit: (): Promise<ModalInit | null> => invoke("get_modal_init"),
+  /** Loads the full configuration for the settings window. */
+  getSettings: (): Promise<AppConfig> => invoke("get_settings"),
+  /** Saves the configuration and re-registers the global hotkey. */
+  saveSettings: (config: AppConfig): Promise<void> => invoke("save_settings", { config }),
+  /** Opens the settings window. */
+  openSettings: (): Promise<void> => invoke("open_settings"),
+  /** Closes the settings window. */
+  closeSettings: (): Promise<void> => invoke("close_settings"),
 };

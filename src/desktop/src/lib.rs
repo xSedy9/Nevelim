@@ -34,6 +34,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::get_app_state,
             commands::get_modal_init,
+            commands::get_settings,
+            commands::save_settings,
+            commands::open_settings,
+            commands::close_settings,
             commands::adapt_template,
             commands::refine_result,
             commands::copy_text,

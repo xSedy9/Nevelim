@@ -19,6 +19,7 @@ import {
   sparklePath,
 } from "./geometry";
 import type { OverlayModel } from "./state";
+import { icon } from "../shared/icons";
 
 /** Action descriptors (mirrors the legacy action list). */
 export const ACTIONS: Array<{ label: string; key: string }> = [
@@ -74,6 +75,12 @@ export interface OverlayDom {
     line: SVGPathElement;
     dot: SVGCircleElement;
   }>;
+  /** Settings entry pill and connector (Left arrow from the hub). */
+  settingsPill: {
+    pill: HTMLDivElement;
+    line: SVGPathElement;
+    dot: SVGCircleElement;
+  };
 }
 
 /** Builds the static overlay DOM for the given templates. */
@@ -146,7 +153,35 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
     return { pill, line, dot };
   });
 
-  return { root, svg, hub, ring, pills, brackets, actionPills };
+  // Settings entry pill (Left arrow from the hub; no brackets by design).
+  const sLine = svgEl("path", {
+    class: "line hidden",
+    d: connectorPath(HUB.y, SNIPPET.x),
+  }) as SVGPathElement;
+  const sDot = svgEl("circle", {
+    class: "dot hidden",
+    r: 3,
+    cx: SNIPPET.x,
+    cy: HUB.y,
+  }) as SVGCircleElement;
+  const settingsPillEl = document.createElement("div");
+  settingsPillEl.className = "pill settings hit";
+  settingsPillEl.innerHTML = `${icon("sliders", 16)}<span class="label">Настройки</span>`;
+  settingsPillEl.style.left = `${SNIPPET.x}px`;
+  settingsPillEl.style.top = `${HUB.y - SNIPPET.height / 2}px`;
+  root.appendChild(settingsPillEl);
+  svg.append(sLine, sDot);
+
+  return {
+    root,
+    svg,
+    hub,
+    ring,
+    pills,
+    brackets,
+    actionPills,
+    settingsPill: { pill: settingsPillEl, line: sLine, dot: sDot },
+  };
 }
 
 /** Places a snippet pill for template `index` at viewport offset `scroll`. */
@@ -204,4 +239,14 @@ export function update(dom: OverlayDom, m: OverlayModel): void {
     dot.setAttribute("cy", String(y));
     dot.setAttribute("class", visible ? (selected ? "dot action selected" : "dot action") : "dot action hidden");
   });
+
+  // Settings entry pill exists only in the settings phase (center slot).
+  const settingsVisible = m.phase === "settings";
+  dom.settingsPill.pill.classList.toggle("visible", settingsVisible);
+  dom.settingsPill.pill.classList.toggle("selected", settingsVisible);
+  dom.settingsPill.line.setAttribute(
+    "class",
+    settingsVisible ? "line selected" : "line hidden",
+  );
+  dom.settingsPill.dot.setAttribute("class", settingsVisible ? "dot selected" : "dot hidden");
 }

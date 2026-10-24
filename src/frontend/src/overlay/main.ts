@@ -12,6 +12,7 @@ import {
   moveDown,
   moveUp,
   expand,
+  openSettingsEntry,
   retract,
   type OverlayModel,
 } from "./state";
@@ -86,6 +87,7 @@ function retractOne(): void {
 function onConfirm(): void {
   if (session.model.phase === "snippets") expandToActions();
   else if (session.model.phase === "hub") expandToSnippets();
+  else if (session.model.phase === "settings") void openSettingsWindow();
   else if (session.model.phase === "actions") {
     const t = session.templates[session.model.selected];
     if (t) void runAction(ACTION_KEYS[session.model.actionSelected], t);
@@ -129,6 +131,12 @@ async function runAction(key: ActionKey, template: SnippetInfo): Promise<void> {
       await hideAndReset();
       break;
   }
+}
+
+/** Opens the settings window and hides the overlay. */
+async function openSettingsWindow(): Promise<void> {
+  await api.openSettings();
+  await hideAndReset();
 }
 
 /** Hides the window and resets the UI, always releasing the closing flag. */
@@ -199,6 +207,9 @@ function wireClicks(): void {
       if (t) void runAction(ACTION_KEYS[k], t);
     });
   });
+  dom.settingsPill.pill.addEventListener("click", () => {
+    if (session.model.phase === "settings") void openSettingsWindow();
+  });
   dom.root.addEventListener("click", (e) => {
     // Click on empty canvas space closes the overlay (legacy behaviour).
     const target = e.target as HTMLElement;
@@ -222,7 +233,12 @@ export async function main(): Promise<void> {
         navDown();
         break;
       case "ArrowLeft":
-        retractOne();
+        if (session.model.phase === "hub") {
+          const next = openSettingsEntry(session.model);
+          if (next) apply(next);
+        } else {
+          retractOne();
+        }
         break;
       case "ArrowRight":
       case "Enter":
@@ -248,6 +264,14 @@ export async function main(): Promise<void> {
     },
     { passive: true },
   );
+
+  // Right mouse button in the hub phase also opens the snippet list.
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (session.model.phase === "hub" && !session.animating && !session.closing) {
+      expandToSnippets();
+    }
+  });
 
   // Show/hide lifecycle. "overlay-shown" is emitted by the Rust side right
   // after the window becomes visible (more reliable than WebView2 focus
@@ -280,10 +304,10 @@ export async function main(): Promise<void> {
 
 /** Hit-test helper over the canvas coordinates (kept exported for tests). */
 export function isHit(x: number, y: number): boolean {
-  if (session.model.phase === "hub") {
-    return isHubClick(x, y);
-  }
   if (isHubClick(x, y)) return true;
+  if (session.model.phase === "settings") {
+    return isSnippetClick(x, y, 2, 0);
+  }
   for (let slot = 0; slot < SNIPPET.visible; slot++) {
     const idx = session.model.scroll + slot;
     if (idx < session.model.count && isSnippetClick(x, y, slot, session.model.scroll)) return true;
