@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import {
   ACTION,
   HUB,
+  SETTINGS,
   SNIPPET,
   actionConnectorPath,
   actionY,
@@ -15,7 +16,9 @@ import {
   connectorPath,
   isActionClick,
   isHubClick,
+  isSettingsClick,
   isSnippetClick,
+  settingsConnectorPath,
   slotY,
   sparklePath,
 } from "../../src/frontend/src/overlay/geometry";
@@ -59,6 +62,25 @@ describe("paths", () => {
     expect(d.startsWith("M 32 13.5")).toBe(true); // 32 - 18.5
     expect(d.endsWith("Z")).toBe(true);
     expect(d.match(/L /g)!.length).toBeGreaterThan(60);
+  });
+});
+
+describe("settings (left side)", () => {
+  it("mirrors the snippet column on the left of the hub", () => {
+    expect(SETTINGS.rightEdge).toBe(HUB.x - 110);
+    expect(SETTINGS.x + SETTINGS.width).toBe(SETTINGS.rightEdge);
+  });
+
+  it("settings connector starts at the hub left edge", () => {
+    const d = settingsConnectorPath(HUB.y);
+    expect(d.startsWith(`M ${HUB.x - HUB.r} ${HUB.y}`)).toBe(true);
+    expect(d.endsWith(`${SETTINGS.rightEdge} ${HUB.y}`)).toBe(true);
+  });
+
+  it("settings hit covers the pill rect", () => {
+    expect(isSettingsClick(SETTINGS.x + 10, HUB.y)).toBe(true);
+    expect(isSettingsClick(SETTINGS.x - 5, HUB.y)).toBe(false);
+    expect(isSettingsClick(SETTINGS.x + 10, HUB.y + SETTINGS.height)).toBe(false);
   });
 });
 
