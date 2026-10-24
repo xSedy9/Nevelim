@@ -163,16 +163,40 @@ async function openSettingsWindow(): Promise<void> {
 const SETTINGS_ACTION_KEYS = ["open", "export", "import"] as const;
 type SettingsActionKey = (typeof SETTINGS_ACTION_KEYS)[number];
 
+/** Shows a transient toast message in the overlay (export feedback etc.). */
+async function toast(message: string, isError = false): Promise<void> {
+  if (!session.dom || session.closing) return;
+  const t = document.createElement("div");
+  t.className = `toast${isError ? " toast--err" : ""}`;
+  t.textContent = message;
+  session.dom.root.appendChild(t);
+  await sleep(30);
+  t.classList.add("shown");
+  await sleep(1600);
+  t.classList.remove("shown");
+  await sleep(260);
+  t.remove();
+}
+
 /** Executes a settings action and hides the overlay. */
 async function runSettingsAction(key: SettingsActionKey): Promise<void> {
   switch (key) {
     case "open":
       await openSettingsWindow();
       break;
-    case "export":
-      await api.exportTemplates();
+    case "export": {
+      let message = "";
+      let failed = false;
+      try {
+        message = await api.exportTemplates();
+      } catch (e) {
+        message = String(e);
+        failed = true;
+      }
+      await toast(message, failed);
       await hideAndReset();
       break;
+    }
     case "import":
       await api.openImport();
       await hideAndReset();

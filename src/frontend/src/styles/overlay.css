@@ -254,6 +254,41 @@ svg .bracket.shown {
   transform: translateX(0);
 }
 
+/* ---------- Toast (action feedback) ---------- */
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 42px;
+  transform: translate(-50%, -6px);
+  max-width: 900px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid #ffffff;
+  color: #ffffff;
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 30;
+  transition:
+    opacity 0.22s ease-out,
+    transform 0.22s ease-out;
+}
+
+.toast.shown {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.toast--err {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 /* ---------- Closing state ---------- */
 
 #overlay-root.closing .pill {
