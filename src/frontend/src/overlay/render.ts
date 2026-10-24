@@ -21,7 +21,6 @@ import {
   sparklePath,
 } from "./geometry";
 import type { OverlayModel } from "./state";
-import { icon } from "../shared/icons";
 
 /** Action descriptors (mirrors the legacy action list). */
 export const ACTIONS: Array<{ label: string; key: string }> = [
@@ -168,7 +167,7 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
   }) as SVGCircleElement;
   const settingsPillEl = document.createElement("div");
   settingsPillEl.className = "pill settings hit";
-  settingsPillEl.innerHTML = `${icon("sliders", 16)}<span class="label">Настройки</span>`;
+  settingsPillEl.textContent = "Настройки";
   settingsPillEl.style.left = `${SETTINGS.x}px`;
   settingsPillEl.style.top = `${HUB.y - SNIPPET.height / 2}px`;
   root.appendChild(settingsPillEl);
@@ -204,7 +203,7 @@ export interface RenderContext {
  * connector paths. Pure DOM updates - motion comes from CSS transitions.
  */
 export function update(dom: OverlayDom, m: OverlayModel): void {
-  const snippetsVisible = m.phase !== "hub";
+  const snippetsVisible = m.phase === "snippets" || m.phase === "actions";
   dom.root.classList.toggle("phase-snippets", m.phase === "snippets");
   dom.root.classList.toggle("phase-actions", m.phase === "actions");
   dom.root.classList.toggle("phase-hub", m.phase === "hub");
@@ -246,9 +245,6 @@ export function update(dom: OverlayDom, m: OverlayModel): void {
   const settingsVisible = m.phase === "settings";
   dom.settingsPill.pill.classList.toggle("visible", settingsVisible);
   dom.settingsPill.pill.classList.toggle("selected", settingsVisible);
-  dom.settingsPill.line.setAttribute(
-    "class",
-    settingsVisible ? "line selected" : "line hidden",
-  );
+  dom.settingsPill.line.setAttribute("class", settingsVisible ? "line selected" : "line hidden");
   dom.settingsPill.dot.setAttribute("class", settingsVisible ? "dot selected" : "dot hidden");
 }
