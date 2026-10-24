@@ -65,10 +65,21 @@ function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
   };
 }
 
-/** Clears the content area and returns a fresh frame with the close button. */
-function clear(): HTMLDivElement {
+/** Clears the content area and returns a fresh frame.
+ *
+ * Always carries the close (top-right) button; pass a `back` handler to also
+ * get an icon-only back button (top-left).
+ */
+function clear(back?: () => void): HTMLDivElement {
   session.root.innerHTML = "";
   const frame = el("div", "frame");
+  if (back) {
+    const backBtn = el("button", "icon-btn left");
+    backBtn.innerHTML = icon("arrow-left", 14);
+    backBtn.title = "Назад";
+    backBtn.addEventListener("click", back);
+    frame.appendChild(backBtn);
+  }
   const closeBtn = el("button", "icon-btn");
   closeBtn.innerHTML = icon("x", 14);
   closeBtn.title = "Закрыть (Esc)";
@@ -102,15 +113,10 @@ function close(): void {
 // PHASE 1: SOURCE SELECTION
 // ==========================================
 
-/** Renders phase 1: kicker + centered prompt + two hover-animated halves. */
+/** Renders phase 1: centered prompt + two hover-animated halves. */
 function renderSelect(): void {
   session.phase = "select";
   const frame = clear();
-
-  const kicker = el("div", "kicker");
-  kicker.textContent = `Адаптация · ${session.init?.snippet_name ?? ""}`;
-  kicker.setAttribute("data-drag", "");
-  frame.appendChild(kicker);
 
   promptRow(frame, null, "Выберите источник");
 
@@ -136,21 +142,20 @@ function renderSelect(): void {
 // PHASE 2: FOLDER / FILE
 // ==========================================
 
-/** Enters the folder phase and auto-opens the directory picker. */
+/** Enters the folder phase: full-frame drop zone, dialog opens automatically. */
 function chooseFolder(): void {
   if (session.busy) return;
   session.phase = "folder";
-  const frame = clear();
+  const frame = clear(renderSelect);
   frame.classList.add("shown");
-  promptRow(frame, "folder", "Папка проекта");
 
-  const area = el("div", "area");
-  const pick = btn("btn-dark", "folder", "Открыть диалог выбора");
-  pick.addEventListener("click", () => void pickFolderFlow());
-  const back = btn("btn-ghost", "arrow-left", "Назад");
-  back.addEventListener("click", renderSelect);
-  area.append(pick, back);
-  frame.appendChild(area);
+  const zone = el("div", "dropzone full");
+  zone.innerHTML =
+    `<span class="dz-ico">${icon("folder", 26)}</span>` +
+    `<span class="dz-title">Выберите папку проекта</span>` +
+    `<span class="dz-sub">диалог откроется автоматически</span>`;
+  zone.addEventListener("click", () => void pickFolderFlow());
+  frame.appendChild(zone);
 
   setTimeout(() => void pickFolderFlow(), 180);
 }
@@ -170,25 +175,20 @@ async function pickFolderFlow(): Promise<void> {
   }
 }
 
-/** Enters the file phase with the drop zone. */
+/** Enters the file phase: full-frame drop zone. */
 function chooseFile(): void {
   if (session.busy) return;
   session.phase = "file";
-  const frame = clear();
+  const frame = clear(renderSelect);
   frame.classList.add("shown");
-  promptRow(frame, "file", "Файл спецификации");
 
-  const area = el("div", "area");
-  const zone = el("div", "dropzone");
+  const zone = el("div", "dropzone full");
   zone.innerHTML =
-    `<span class="dz-ico">${icon("file", 20)}</span>` +
-    `<span class="dz-title">Перетащите файл или нажмите</span>` +
+    `<span class="dz-ico">${icon("file", 26)}</span>` +
+    `<span class="dz-title">Выберите файл спецификации</span>` +
     `<span class="dz-sub">.md, .txt, .json, .yaml</span>`;
   zone.addEventListener("click", () => void pickFileFlow());
-  const back = btn("btn-ghost", "arrow-left", "Назад");
-  back.addEventListener("click", renderSelect);
-  area.append(zone, back);
-  frame.appendChild(area);
+  frame.appendChild(zone);
 }
 
 /** File flow: dialog -> validation -> status card. */
@@ -210,31 +210,23 @@ async function pickFileFlow(): Promise<void> {
 // SPEC STATUS + ADAPT
 // ==========================================
 
-/** Renders the specification status card and the adapt action. */
+/** Renders the specification status: just the source icon, then the action. */
 function renderSpec(spec: SpecDto, isFolder: boolean): void {
   session.phase = "spec";
   session.specIsFolder = isFolder;
-  const frame = clear();
+  const frame = clear(renderSelect);
   frame.classList.add("shown");
-  promptRow(frame, isFolder ? "folder" : "file", isFolder ? "Папка проекта" : "Файл спецификации");
+  if (!spec.found) session.root.classList.add("error");
+
+  // The source itself: a single large icon, green-tinted on success,
+  // red-tinted on failure (no text per design).
+  const stage = el("div", "stage");
+  const tile = el("div", `big-tile ${spec.found ? "ok" : "bad"}`);
+  tile.innerHTML = icon(isFolder ? "folder" : "file", 36);
+  stage.appendChild(tile);
+  frame.appendChild(stage);
 
   const area = el("div", "area");
-
-  const card = el("div", `spec ${spec.found ? "ok" : "bad"}`);
-  const dot = el("span", `s-dot ${spec.found ? "ok" : "bad"}`);
-  const body = el("div", "s-body");
-  const title = el("div", "s-title");
-  title.textContent = spec.found
-    ? (spec.path ?? "").split(/[\\/]/).pop() || spec.path
-    : "Ошибка";
-  const sub = el("div", "s-sub mono");
-  sub.textContent = spec.found
-    ? `${(spec.content.length / 1024).toFixed(1)} КБ · готово к адаптации`
-    : spec.error || "Неизвестная ошибка";
-  body.append(title, sub);
-  card.append(dot, body);
-  area.appendChild(card);
-
   if (spec.found) {
     const adapt = btn("btn-primary", "sparkle", "Адаптировать");
     adapt.addEventListener("click", () => void adaptFlow(adapt));
@@ -244,10 +236,6 @@ function renderSpec(spec: SpecDto, isFolder: boolean): void {
     retry.addEventListener("click", () => (isFolder ? chooseFolder() : chooseFile()));
     area.appendChild(retry);
   }
-
-  const back = btn("btn-ghost", "arrow-left", "Сменить источник");
-  back.addEventListener("click", renderSelect);
-  area.appendChild(back);
   frame.appendChild(area);
 }
 
@@ -279,7 +267,7 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
 /** Renders the editable result with the refinement chat bar and actions. */
 function renderResult(text: string): void {
   session.phase = "result";
-  const frame = clear();
+  const frame = clear(renderSelect);
   frame.classList.add("shown");
   session.root.classList.remove("error");
 
@@ -328,9 +316,7 @@ function renderResult(text: string): void {
       .then(() => api.copyText(final))
       .then(close);
   });
-  const back = btn("btn-ghost", "arrow-left", "Сменить источник");
-  back.addEventListener("click", renderSelect);
-  footer.append(accept, copy, back);
+  footer.append(accept, copy);
   frame.appendChild(footer);
 }
 

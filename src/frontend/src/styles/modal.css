@@ -77,17 +77,8 @@ body {
 
 /* ---------- Header pieces ---------- */
 
-.kicker {
-  text-align: center;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.mono {
+  font-family: Consolas, "Cascadia Mono", monospace;
 }
 
 .prompt {
@@ -190,65 +181,6 @@ body {
   min-height: 0;
 }
 
-/* ---------- Spec card ---------- */
-
-.spec {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 12px 14px;
-}
-
-.spec.ok {
-  border-color: rgba(34, 197, 94, 0.35);
-}
-
-.spec.bad {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.05);
-}
-
-.s-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-top: 5px;
-  flex: none;
-}
-
-.s-dot.ok {
-  background: var(--ok);
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
-}
-
-.s-dot.bad {
-  background: var(--err);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-}
-
-.s-title {
-  color: var(--text);
-  font-weight: 600;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.s-sub {
-  color: var(--muted);
-  font-size: 11px;
-  margin-top: 4px;
-  word-break: break-all;
-}
-
-.mono {
-  font-family: Consolas, "Cascadia Mono", monospace;
-}
-
 /* ---------- Buttons ---------- */
 
 .btn {
@@ -344,6 +276,11 @@ body {
   color: #ffffff;
 }
 
+.icon-btn.left {
+  left: 12px;
+  right: auto;
+}
+
 .spinner {
   width: 14px;
   height: 14px;
@@ -366,17 +303,21 @@ body {
   }
 }
 
-/* ---------- Drop zone ---------- */
+/* ---------- Drop zone (full-frame) ---------- */
 
 .dropzone {
-  border: 1.5px dashed rgba(255, 255, 255, 0.18);
-  border-radius: 14px;
-  background: var(--surface);
-  padding: 18px 14px;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 18px 14px;
   cursor: pointer;
   color: var(--text);
   font-family: inherit;
@@ -392,16 +333,58 @@ body {
 
 .dz-ico {
   color: var(--muted);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.dropzone:hover .dz-ico {
+  transform: scale(1.12);
 }
 
 .dz-title {
   font-weight: 600;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 
 .dz-sub {
   font-size: 11.5px;
   color: var(--muted);
+}
+
+/* ---------- Spec stage: the source icon ---------- */
+
+.stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.big-tile {
+  width: 104px;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 26px;
+  background: linear-gradient(150deg, #28282f, #1b1b21);
+  border: 1px solid var(--border);
+  color: #ffffff;
+}
+
+.big-tile.ok {
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(34, 197, 94, 0.15),
+    0 0 44px rgba(34, 197, 94, 0.12);
+}
+
+.big-tile.bad {
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.18),
+    0 0 44px rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
 }
 
 /* ---------- Phase 3: result ---------- */
