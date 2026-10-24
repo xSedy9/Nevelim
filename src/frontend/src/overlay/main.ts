@@ -355,13 +355,18 @@ export async function main(): Promise<void> {
     { passive: true },
   );
 
-  // Right mouse button dives one level deeper: hub -> snippets and
-  // settings -> settings actions.
+  // Right mouse button drives the LEFT side: hub -> settings pill (the
+  // settings pill is hidden at the hub, so this is the only mouse path into
+  // the settings branch) and settings -> settings actions.
   document.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     if (session.animating || session.closing) return;
-    if (session.model.phase === "hub") expandToSnippets();
-    else if (session.model.phase === "settings") expandSettingsActions();
+    if (session.model.phase === "hub") {
+      const next = openSettingsEntry(session.model);
+      if (next) apply(next);
+    } else if (session.model.phase === "settings") {
+      expandSettingsActions();
+    }
   });
 
   // Show/hide lifecycle. "overlay-shown" is emitted by the Rust side right
