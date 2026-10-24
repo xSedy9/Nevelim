@@ -9,6 +9,7 @@ pub mod focus;
 pub mod logging;
 pub mod overlay;
 pub mod state;
+pub mod tray;
 
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 
@@ -68,6 +69,7 @@ pub fn run() {
             overlay::create_overlay(app.handle())?;
             overlay::start_cursor_hit_test(app.handle());
             register_hotkey_from_config(app.handle());
+            tray::create_tray(app.handle())?;
             logging::info("app started");
             Ok(())
         })
