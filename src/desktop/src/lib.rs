@@ -78,8 +78,8 @@ pub fn run() {
 }
 
 /// Loads configuration from the resolved path, falling back to defaults.
-pub(crate) fn load_config() -> quick_snippets_core::config::Config {
-    quick_snippets_core::config::load_or_default(&quick_snippets_core::config::resolve_config_path())
+pub(crate) fn load_config() -> nevelim_core::config::Config {
+    nevelim_core::config::load_or_default(&nevelim_core::config::resolve_config_path())
 }
 
 /// (Re-)registers the global shortcut using the hotkey from the current config.

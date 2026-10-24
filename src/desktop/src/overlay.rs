@@ -26,7 +26,7 @@ pub fn create_overlay(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     }
     let win =
         tauri::WebviewWindowBuilder::new(app, "overlay", WebviewUrl::App("overlay.html".into()))
-            .title("QuickSnippetsOverlay")
+            .title("NevelimOverlay")
             .inner_size(OVERLAY_W, OVERLAY_H)
             .transparent(true)
             .decorations(false)

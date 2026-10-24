@@ -1,16 +1,16 @@
 [package]
-name = "quick-snippets-desktop"
+name = "nevelim-desktop"
 description = "Nevelim desktop shell: Tauri v2 entry point, windows, hotkeys, IPC"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-default-run = "quick-snippets-desktop"
+default-run = "nevelim-desktop"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-quick-snippets-core = { path = "../backend" }
+nevelim-core = { path = "../backend" }
 dirs = "6"
 tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-clipboard-manager = "2"
