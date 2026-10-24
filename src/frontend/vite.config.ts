@@ -14,6 +14,7 @@ export default defineConfig({
         overlay: resolve(__dirname, "overlay.html"),
         modal: resolve(__dirname, "modal.html"),
         settings: resolve(__dirname, "settings.html"),
+        import: resolve(__dirname, "import.html"),
       },
     },
   },

@@ -16,6 +16,7 @@ import {
   actionY,
   bracketPath,
   connectorPath,
+  settingsActionY,
   settingsConnectorPath,
   slotY,
   sparklePath,
@@ -82,6 +83,8 @@ export interface OverlayDom {
     line: SVGPathElement;
     dot: SVGCircleElement;
   };
+  /** Settings action pills (Открыть / Экспортировать / Импортировать). */
+  settingsActions: Array<{ pill: HTMLDivElement }>;
 }
 
 /** Builds the static overlay DOM for the given templates. */
@@ -173,6 +176,18 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
   root.appendChild(settingsPillEl);
   svg.append(sLine, sDot);
 
+  // Settings action pills (fan out under the settings pill position).
+  const SETTINGS_ACTION_DEFS = ["Открыть", "Экспортировать", "Импортировать"];
+  const settingsActions = SETTINGS_ACTION_DEFS.map((label, k) => {
+    const pill = document.createElement("div");
+    pill.className = "pill settings-action hit";
+    pill.textContent = label;
+    pill.style.left = `${SETTINGS.x}px`;
+    pill.style.top = `${settingsActionY(k) - SNIPPET.height / 2}px`;
+    root.appendChild(pill);
+    return { pill };
+  });
+
   return {
     root,
     svg,
@@ -182,6 +197,7 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
     brackets,
     actionPills,
     settingsPill: { pill: settingsPillEl, line: sLine, dot: sDot },
+    settingsActions,
   };
 }
 
@@ -247,4 +263,12 @@ export function update(dom: OverlayDom, m: OverlayModel): void {
   dom.settingsPill.pill.classList.toggle("selected", settingsVisible);
   dom.settingsPill.line.setAttribute("class", settingsVisible ? "line selected" : "line hidden");
   dom.settingsPill.dot.setAttribute("class", settingsVisible ? "dot selected" : "dot hidden");
+
+  // Settings actions exist only in the settings-actions phase.
+  dom.settingsActions.forEach(({ pill }, k) => {
+    const visible = m.phase === "settings-actions";
+    const selected = visible && k === m.actionSelected;
+    pill.classList.toggle("visible", visible);
+    pill.classList.toggle("selected", selected);
+  });
 }

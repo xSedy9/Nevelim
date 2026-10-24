@@ -140,6 +140,166 @@ pub fn close_settings(app: AppHandle) {
     }
 }
 
+/// Resolves the export folder: the configured one, or the system Downloads.
+fn resolve_export_dir(cfg: &Config) -> PathBuf {
+    let configured = cfg.export_dir.trim();
+    if configured.is_empty() {
+        dirs::download_dir().unwrap_or_else(|| base_dir())
+    } else {
+        PathBuf::from(configured)
+    }
+}
+
+/// Copies every template into the export folder.
+///
+/// Returns a user-facing summary message ("Экспортировано файлов: N").
+#[tauri::command]
+pub fn export_templates() -> Result<String, String> {
+    let cfg = config::load_or_default(&config::resolve_config_path());
+    let folder = resolve_export_dir(&cfg);
+    let templates_dir = base_dir().join("templates");
+    let templates = templates::scan_templates(&templates_dir).map_err(|e| e.to_string())?;
+    if templates.is_empty() {
+        return Err("Нет шаблонов для экспорта.".to_string());
+    }
+    std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
+    let mut exported = 0usize;
+    for t in &templates {
+        let file_name = t
+            .path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| format!("{}.md", t.name));
+        let dest = folder.join(file_name);
+        std::fs::copy(&t.path, &dest).map_err(|e| format!("{e}: {dest:?}"))?;
+        exported += 1;
+    }
+    Ok(format!(
+        "Экспортировано файлов: {exported} → {}",
+        folder.to_string_lossy()
+    ))
+}
+
+/// Validation result for a candidate import file.
+#[derive(Debug, Clone, Serialize)]
+pub struct ImportCheckDto {
+    /// Whether the file is a valid snippet import.
+    pub ok: bool,
+    /// Suggested template name (file stem).
+    pub name: String,
+    /// File size in bytes (0 on failure).
+    pub size_bytes: u64,
+    /// Human-readable failure reason (None on success).
+    pub error: Option<String>,
+}
+
+/// Builds a failing import check DTO.
+fn import_error(error: &str) -> ImportCheckDto {
+    ImportCheckDto {
+        ok: false,
+        name: String::new(),
+        size_bytes: 0,
+        error: Some(error.to_string()),
+    }
+}
+
+/// Quick validation of a candidate import file (extension, readability, size).
+#[tauri::command]
+pub fn check_import_file(file: String) -> ImportCheckDto {
+    let path = std::path::Path::new(&file);
+    if !path.is_file() {
+        return import_error("Файл не существует.");
+    }
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase())
+        .unwrap_or_default();
+    if !matches!(ext.as_str(), "md" | "txt") {
+        return import_error("Подходят только файлы .md или .txt.");
+    }
+    match std::fs::read_to_string(path) {
+        Ok(content) => {
+            if let Err(msg) = quick_snippets_core::spec::check_size(&content) {
+                return import_error(&msg);
+            }
+            if content.trim().is_empty() {
+                return import_error("Файл не содержит текста.");
+            }
+            ImportCheckDto {
+                ok: true,
+                name: path
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().to_string())
+                    .unwrap_or_default(),
+                size_bytes: content.len() as u64,
+                error: None,
+            }
+        }
+        Err(e) => import_error(&format!("Ошибка чтения файла: {e}")),
+    }
+}
+
+/// Imports a validated file into the templates directory.
+#[tauri::command]
+pub fn import_template(file: String) -> Result<String, String> {
+    let src = std::path::Path::new(&file);
+    if !src.is_file() {
+        return Err("Файл не существует.".to_string());
+    }
+    let templates_dir = base_dir().join("templates");
+    std::fs::create_dir_all(&templates_dir).map_err(|e| e.to_string())?;
+    let stem = src
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "snippet".to_string());
+    let mut dest = templates_dir.join(format!("{stem}.md"));
+    // Never overwrite an existing template: add a numeric suffix instead.
+    let mut n = 1;
+    while dest.exists() {
+        dest = templates_dir.join(format!("{stem} ({n}).md"));
+        n += 1;
+    }
+    std::fs::copy(src, &dest).map_err(|e| e.to_string())?;
+    Ok(dest
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default())
+}
+
+/// Opens (or focuses) the import wizard window.
+#[tauri::command]
+pub async fn open_import(app: AppHandle) -> Result<(), String> {
+    if let Some(existing) = app.get_webview_window("import") {
+        let _ = existing.show();
+        let _ = existing.set_focus();
+        return Ok(());
+    }
+    tauri::WebviewWindowBuilder::new(&app, "import", WebviewUrl::App("import.html".into()))
+        .title("Импорт сниппета")
+        .inner_size(440.0, 380.0)
+        .transparent(true)
+        .decorations(false)
+        .shadow(false)
+        .skip_taskbar(true)
+        .resizable(false)
+        .center()
+        .build()
+        .map(|_| ())
+        .map_err(|e| {
+            eprintln!("[import] failed to open: {e}");
+            e.to_string()
+        })
+}
+
+/// Closes the import wizard window.
+#[tauri::command]
+pub fn close_import(app: AppHandle) {
+    if let Some(win) = app.get_webview_window("import") {
+        let _ = win.close();
+    }
+}
+
 /// Runs the AI adaptation of a template against a specification.
 #[tauri::command]
 pub async fn adapt_template(

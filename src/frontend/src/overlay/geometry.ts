@@ -152,6 +152,22 @@ export function isSettingsClick(x: number, y: number): boolean {
   );
 }
 
+/** Y position of settings action row `k` (stacked under the hub row). */
+export function settingsActionY(k: number): number {
+  return HUB.y + (k - 1.5) * 44;
+}
+
+/** Whether a click lands inside settings action row `k`. */
+export function isSettingsActionClick(x: number, y: number, k: number): boolean {
+  const ay = settingsActionY(k);
+  return (
+    x >= SETTINGS.x &&
+    x <= SETTINGS.x + SETTINGS.width &&
+    y >= ay - SETTINGS.height / 2 &&
+    y <= ay + SETTINGS.height / 2
+  );
+}
+
 /** Whether a click lands inside action row `k` attached to slot `y`. */
 export function isActionClick(x: number, y: number, slotYValue: number, k: number): boolean {
   const ay = actionY(slotYValue, k);

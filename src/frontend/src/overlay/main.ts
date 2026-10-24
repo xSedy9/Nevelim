@@ -6,7 +6,15 @@
 import { listen } from "@tauri-apps/api/event";
 
 import { api, type AppStateDto } from "../shared/ipc";
-import { SNIPPET, isActionClick, isHubClick, isSettingsClick, isSnippetClick, slotY } from "./geometry";
+import {
+  SNIPPET,
+  isActionClick,
+  isHubClick,
+  isSettingsActionClick,
+  isSettingsClick,
+  isSnippetClick,
+  slotY,
+} from "./geometry";
 import {
   initialModel,
   moveDown,
@@ -87,8 +95,17 @@ function retractOne(): void {
 function onConfirm(): void {
   if (session.model.phase === "snippets") expandToActions();
   else if (session.model.phase === "hub") expandToSnippets();
-  else if (session.model.phase === "settings") void openSettingsWindow();
-  else if (session.model.phase === "actions") {
+  else if (session.model.phase === "settings") {
+    const next = expand(session.model);
+    if (next) {
+      void animate(async () => {
+        apply(next);
+        await sleep(300);
+      });
+    }
+  } else if (session.model.phase === "settings-actions") {
+    void runSettingsAction(SETTINGS_ACTION_KEYS[session.model.actionSelected]);
+  } else if (session.model.phase === "actions") {
     const t = session.templates[session.model.selected];
     if (t) void runAction(ACTION_KEYS[session.model.actionSelected], t);
   }
@@ -137,6 +154,27 @@ async function runAction(key: ActionKey, template: SnippetInfo): Promise<void> {
 async function openSettingsWindow(): Promise<void> {
   await api.openSettings();
   await hideAndReset();
+}
+
+/** Settings action keys in fanout order. */
+const SETTINGS_ACTION_KEYS = ["open", "export", "import"] as const;
+type SettingsActionKey = (typeof SETTINGS_ACTION_KEYS)[number];
+
+/** Executes a settings action and hides the overlay. */
+async function runSettingsAction(key: SettingsActionKey): Promise<void> {
+  switch (key) {
+    case "open":
+      await openSettingsWindow();
+      break;
+    case "export":
+      await api.exportTemplates();
+      await hideAndReset();
+      break;
+    case "import":
+      await api.openImport();
+      await hideAndReset();
+      break;
+  }
 }
 
 /** Hides the window and resets the UI, always releasing the closing flag. */
@@ -208,7 +246,14 @@ function wireClicks(): void {
     });
   });
   dom.settingsPill.pill.addEventListener("click", () => {
-    if (session.model.phase === "settings") void openSettingsWindow();
+    if (session.model.phase === "settings") onConfirm();
+  });
+  dom.settingsActions.forEach(({ pill }, k) => {
+    pill.addEventListener("click", () => {
+      if (session.model.phase === "settings-actions") {
+        void runSettingsAction(SETTINGS_ACTION_KEYS[k]);
+      }
+    });
   });
   dom.root.addEventListener("click", (e) => {
     // Click on empty canvas space closes the overlay (legacy behaviour).
@@ -241,6 +286,13 @@ export async function main(): Promise<void> {
         }
         break;
       case "ArrowRight":
+        // In settings phases Right retracts (pill -> hub) instead of confirming.
+        if (session.model.phase === "settings" || session.model.phase === "settings-actions") {
+          retractOne();
+        } else {
+          onConfirm();
+        }
+        break;
       case "Enter":
       case " ":
         onConfirm();
@@ -252,6 +304,8 @@ export async function main(): Promise<void> {
         if (session.model.phase === "actions" && /^[1-4]$/.test(e.key)) {
           const t = session.templates[session.model.selected];
           if (t) void runAction(ACTION_KEYS[Number(e.key) - 1], t);
+        } else if (session.model.phase === "settings-actions" && /^[1-3]$/.test(e.key)) {
+          void runSettingsAction(SETTINGS_ACTION_KEYS[Number(e.key) - 1]);
         }
     }
   });
@@ -307,6 +361,12 @@ export function isHit(x: number, y: number): boolean {
   if (isHubClick(x, y)) return true;
   if (session.model.phase === "settings") {
     return isSettingsClick(x, y);
+  }
+  if (session.model.phase === "settings-actions") {
+    for (let k = 0; k < SETTINGS_ACTION_KEYS.length; k++) {
+      if (isSettingsActionClick(x, y, k)) return true;
+    }
+    return false;
   }
   for (let slot = 0; slot < SNIPPET.visible; slot++) {
     const idx = session.model.scroll + slot;

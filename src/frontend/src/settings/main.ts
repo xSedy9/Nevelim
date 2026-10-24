@@ -9,7 +9,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type AppConfig, type ProviderId } from "../shared/ipc";
-import { icon } from "../shared/icons";
+import { icon, type IconName } from "../shared/icons";
 
 /** Provider descriptors for the segmented control. */
 const PROVIDERS: Array<{ id: ProviderId; label: string }> = [
@@ -42,6 +42,13 @@ function sectionLabel(frame: HTMLElement, text: string): void {
   const l = el("div", "s-label");
   l.textContent = text;
   frame.appendChild(l);
+}
+
+/** Builds a button with an optional leading SVG icon and a text label. */
+function btn(cls: string, iconName: IconName | null, label: string): HTMLButtonElement {
+  const b = el("button", `btn ${cls}`);
+  b.innerHTML = `${iconName ? icon(iconName, 14) : ""}<span>${label}</span>`;
+  return b;
 }
 
 /** Renders the whole settings form from `session.cfg`. */
@@ -120,6 +127,26 @@ function render(): void {
   row.append(toggleLabel, sw);
   frame.appendChild(row);
 
+  // Export folder.
+  sectionLabel(frame, "Папка экспорта");
+  const dirRow = el("div", "dir-row");
+  const dirLabel = el("span", "dir-label mono");
+  const refreshDirLabel = () => {
+    dirLabel.textContent = cfg.export_dir.trim() || "По умолчанию (Загрузки)";
+  };
+  refreshDirLabel();
+  const dirBtns = el("div", "dir-btns");
+  const chooseDir = btn("btn-dark", "folder", "Выбрать…");
+  chooseDir.addEventListener("click", () => void pickExportDir(cfg, refreshDirLabel));
+  const resetDir = btn("btn-ghost", "x", "Сбросить");
+  resetDir.addEventListener("click", () => {
+    cfg.export_dir = "";
+    refreshDirLabel();
+  });
+  dirBtns.append(chooseDir, resetDir);
+  dirRow.append(dirLabel, dirBtns);
+  frame.appendChild(dirRow);
+
   // Footer with save button + status line.
   const foot = el("div", "foot");
   const err = el("div", "err mono");
@@ -162,6 +189,21 @@ function syncProviderFields(keyInput: HTMLInputElement, modelInput: HTMLInputEle
   const cfg = session.cfg!;
   keyInput.value = keyOf(cfg, cfg.provider);
   modelInput.value = modelOf(cfg, cfg.provider);
+}
+
+/** Folder picker flow for the export directory setting. */
+async function pickExportDir(cfg: AppConfig, refresh: () => void): Promise<void> {
+  if (session.busy) return;
+  session.busy = true;
+  try {
+    const folder = await api.pickFolder();
+    if (folder) {
+      cfg.export_dir = folder;
+      refresh();
+    }
+  } finally {
+    session.busy = false;
+  }
 }
 
 /** Persists the configuration; shows a success flash or an inline error. */

@@ -70,6 +70,18 @@ export interface ModalInit {
 /** AI provider selector (matches core::config::Provider). */
 export type ProviderId = "gemini" | "openai" | "openrouter";
 
+/** Validation result for a candidate import file. */
+export interface ImportCheckDto {
+  /** Whether the file is a valid snippet import. */
+  ok: boolean;
+  /** Suggested template name (file stem). */
+  name: string;
+  /** File size in bytes (0 on failure). */
+  size_bytes: number;
+  /** Human-readable failure reason (None on success). */
+  error: string | null;
+}
+
 /** Full application configuration (settings window reads and edits it). */
 export interface AppConfig {
   /** Global hotkey string, e.g. "alt+shift+v". */
@@ -92,6 +104,8 @@ export interface AppConfig {
   openrouter_model: string;
   /** Auto-paste behaviour flag. */
   paste_automatically: boolean;
+  /** Folder for template export; empty means the system Downloads folder. */
+  export_dir: string;
   /** Recently used project folders. */
   recent_projects: string[];
 }
@@ -144,4 +158,15 @@ export const api = {
   openSettings: (): Promise<void> => invoke("open_settings"),
   /** Closes the settings window. */
   closeSettings: (): Promise<void> => invoke("close_settings"),
+  /** Copies all templates into the configured export folder. */
+  exportTemplates: (): Promise<string> => invoke("export_templates"),
+  /** Validates a candidate import file. */
+  checkImportFile: (file: string): Promise<ImportCheckDto> =>
+    invoke("check_import_file", { file }),
+  /** Copies a validated file into the templates directory. */
+  importTemplate: (file: string): Promise<string> => invoke("import_template", { file }),
+  /** Opens the import wizard window. */
+  openImport: (): Promise<void> => invoke("open_import"),
+  /** Closes the import wizard window. */
+  closeImport: (): Promise<void> => invoke("close_import"),
 };
