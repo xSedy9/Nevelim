@@ -16,6 +16,7 @@ use tauri_plugin_opener::OpenerExt;
 use quick_snippets_core::ai::{self, ChatMessage};
 use quick_snippets_core::config::{self, Config};
 use quick_snippets_core::error::CoreError;
+use quick_snippets_core::export;
 use quick_snippets_core::history;
 use quick_snippets_core::spec::{self, FoundSpec};
 use quick_snippets_core::templates::{self, TemplateEntry};
@@ -144,7 +145,7 @@ pub fn close_settings(app: AppHandle) {
 fn resolve_export_dir(cfg: &Config) -> PathBuf {
     let configured = cfg.export_dir.trim();
     if configured.is_empty() {
-        dirs::download_dir().unwrap_or_else(|| base_dir())
+        dirs::download_dir().unwrap_or_else(base_dir)
     } else {
         PathBuf::from(configured)
     }
@@ -152,32 +153,20 @@ fn resolve_export_dir(cfg: &Config) -> PathBuf {
 
 /// Copies every template into the export folder.
 ///
-/// Returns a user-facing summary message ("Экспортировано файлов: N").
+/// Packs the config and all templates into a timestamped zip archive
+/// (`config.json` + `templates/`) inside the export folder, then opens that
+/// folder. Returns the archive path.
 #[tauri::command]
-pub fn export_templates() -> Result<String, String> {
-    let cfg = config::load_or_default(&config::resolve_config_path());
+pub fn export_templates(app: AppHandle) -> Result<String, String> {
+    let cfg_path = config::resolve_config_path();
+    let cfg = config::load_or_default(&cfg_path);
     let folder = resolve_export_dir(&cfg);
-    let templates_dir = base_dir().join("templates");
-    let templates = templates::scan_templates(&templates_dir).map_err(|e| e.to_string())?;
-    if templates.is_empty() {
-        return Err("Нет шаблонов для экспорта.".to_string());
-    }
-    std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
-    let mut exported = 0usize;
-    for t in &templates {
-        let file_name = t
-            .path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| format!("{}.md", t.name));
-        let dest = folder.join(file_name);
-        std::fs::copy(&t.path, &dest).map_err(|e| format!("{e}: {dest:?}"))?;
-        exported += 1;
-    }
-    Ok(format!(
-        "Экспортировано файлов: {exported} → {}",
-        folder.to_string_lossy()
-    ))
+    let zip_path = export::export_backup(&cfg_path, &base_dir().join("templates"), &folder)
+        .map_err(|e| e.to_string())?;
+    app.opener()
+        .open_path(folder.to_string_lossy().into_owned(), None::<&str>)
+        .map_err(|e| e.to_string())?;
+    Ok(zip_path.to_string_lossy().into_owned())
 }
 
 /// Validation result for a candidate import file.
@@ -453,9 +442,9 @@ fn spec_from_found(found: FoundSpec) -> SpecDto {
 pub fn load_spec_from_folder(folder: String) -> SpecDto {
     match spec::find_specification(std::path::Path::new(&folder)) {
         Some(found) => spec_from_found(found),
-        None => spec_error(
-            "Файл спецификации (docs/SPECIFICATION.md / spec.md) не найден или пуст.",
-        ),
+        None => {
+            spec_error("Файл спецификации (docs/SPECIFICATION.md / spec.md) не найден или пуст.")
+        }
     }
 }
 
