@@ -98,7 +98,6 @@ async function pickFlow(): Promise<void> {
  * Clicking the file card reopens the picker dialog. */
 function renderCheck(check: ImportCheckDto): void {
   const frame = clear();
-  session.root.classList.add(check.ok ? "ok" : "bad");
 
   const stage = el("div", "stage");
   stage.title = "Выбрать другой архив";
@@ -126,6 +125,10 @@ function renderCheck(check: ImportCheckDto): void {
     area.appendChild(imp);
     frame.appendChild(area);
   }
+
+  // Color the frame only after the entrance finishes: the border and stage
+  // then visibly transition to green/red instead of starting colored.
+  window.setTimeout(() => session.root.classList.add(check.ok ? "ok" : "bad"), 280);
 }
 
 /** Imports the validated file and closes the wizard. */

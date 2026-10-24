@@ -183,6 +183,9 @@ button:focus-visible {
   border-radius: 16px;
   background: var(--surface);
   cursor: pointer;
+  transition:
+    border-color 0.3s,
+    background 0.3s;
 }
 
 #import-root.ok .stage {
@@ -249,6 +252,18 @@ button:focus-visible {
   flex-direction: column;
   gap: 10px;
   margin-top: 16px;
+}
+
+/* The action button rises in after the color transition starts. */
+.area > .btn {
+  animation: rise-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 .btn {
