@@ -55,7 +55,8 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 18px 20px 16px;
+  /* 46px top strip hosts the back/close buttons; content starts below it. */
+  padding: 46px 16px 14px;
   background: linear-gradient(165deg, var(--bg-1) 0%, var(--bg-2) 100%);
   border: 1px solid var(--border);
   border-radius: 20px;
