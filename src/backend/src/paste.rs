@@ -7,8 +7,13 @@
 use crate::error::{CoreError, CoreResult};
 
 /// Delay (ms) that the desktop shell should sleep between focusing the target
-/// window and injecting the keystroke (mirrors the legacy 80 ms settle time).
-pub const PASTE_SETTLE_MS: u64 = 80;
+/// window and injecting the keystroke.
+///
+/// `SetForegroundWindow` is asynchronous and heavy chat apps (Electron/Qt)
+/// need a moment to process activation before they accept synthetic input;
+/// 150 ms is empirically reliable where the legacy 80 ms sometimes lost the
+/// keystroke.
+pub const PASTE_SETTLE_MS: u64 = 150;
 
 /// Sends the paste keystroke (Ctrl+V, or Cmd+V on macOS) using `enigo`.
 pub fn send_paste_keystroke() -> CoreResult<()> {
@@ -39,7 +44,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn settle_delay_matches_legacy() {
-        assert_eq!(PASTE_SETTLE_MS, 80);
+    fn settle_delay_is_robust_for_heavy_apps() {
+        assert_eq!(PASTE_SETTLE_MS, 150);
     }
 }

@@ -136,8 +136,10 @@ async function runAction(key: ActionKey, template: SnippetInfo): Promise<void> {
       await closeAnimated();
       break;
     case "paste":
-      await api.pasteSnippet(template.content);
+      // Hide first: the overlay must not compete for focus while the paste
+      // keystroke is injected into the target window.
       await closeAnimated();
+      await api.pasteSnippet(template.content);
       break;
     case "edit":
       await api.openPath(template.path);
