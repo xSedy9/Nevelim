@@ -95,7 +95,7 @@ export function buildOverlay(root: HTMLDivElement, templates: SnippetInfo[]): Ov
   hub.className = "hub hit";
   hub.innerHTML = `
     <svg width="${HUB.r * 2 + 16}" height="${HUB.r * 2 + 16}" viewBox="0 0 64 64">
-      <circle cx="32" cy="32" r="29" fill="rgba(18,18,22,0.99)" stroke="#fff" stroke-width="3"/>
+      <circle cx="32" cy="32" r="29" fill="rgba(0,0,0,0.95)" stroke="#fff" stroke-width="3"/>
       <path d="${sparklePath(32, 32, 18.5)}" fill="#fff"/>
     </svg>`;
   root.appendChild(hub);

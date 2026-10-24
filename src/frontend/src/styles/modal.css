@@ -8,15 +8,12 @@
 }
 
 :root {
-  --bg-1: #17171c;
-  --bg-2: #101013;
   --surface: rgba(255, 255, 255, 0.03);
-  --surface-hover: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.22);
-  --text: #f4f4f5;
-  --muted: #8b8b98;
-  --ring: rgba(167, 139, 250, 0.35);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.3);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.5);
   --ok: #22c55e;
   --err: #ef4444;
   --radius: 12px;
@@ -57,7 +54,8 @@ body {
   flex-direction: column;
   /* 46px top strip hosts the back/close buttons; content starts below it. */
   padding: 46px 16px 14px;
-  background: linear-gradient(165deg, var(--bg-1) 0%, var(--bg-2) 100%);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+    #000000;
   border: 1px solid var(--border);
   border-radius: 20px;
   box-shadow:
@@ -195,7 +193,7 @@ body {
 
 .btn-primary {
   background: #ffffff;
-  color: #0a0a0c;
+  color: #000000;
   width: 100%;
 }
 
@@ -204,13 +202,13 @@ body {
 }
 
 .btn-dark {
-  background: #26262d;
+  background: rgba(255, 255, 255, 0.07);
   border-color: var(--border);
   width: 100%;
 }
 
 .btn-dark:hover {
-  background: #30303a;
+  background: rgba(255, 255, 255, 0.13);
   border-color: var(--border-strong);
 }
 
@@ -296,7 +294,8 @@ body {
 .mini-card {
   width: 340px;
   max-width: calc(100% - 32px);
-  background: linear-gradient(165deg, #1b1b21, #131317);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+    #000000;
   border: 1px solid rgba(239, 68, 68, 0.45);
   border-radius: 16px;
   box-shadow:
@@ -471,7 +470,7 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 18px;
-  background: linear-gradient(150deg, #28282f, #1b1b21);
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border);
   color: #ffffff;
 }
@@ -537,8 +536,8 @@ body {
   resize: none;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #141418;
-  color: #f4f4f5;
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
   font-family: Consolas, "Cascadia Mono", monospace;
   font-size: 12px;
   line-height: 1.55;
@@ -551,8 +550,8 @@ body {
 }
 
 .result:focus {
-  border-color: rgba(167, 139, 250, 0.5);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
 .result::-webkit-scrollbar {
@@ -560,9 +559,9 @@ body {
 }
 
 .result::-webkit-scrollbar-thumb {
-  background: #2c2c34;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 5px;
-  border: 3px solid #141418;
+  border: 3px solid rgba(0, 0, 0, 0.45);
 }
 
 .chat {
@@ -581,7 +580,7 @@ body {
   min-width: 0;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: #141418;
+  background: rgba(0, 0, 0, 0.45);
   color: var(--text);
   font-family: inherit;
   font-size: 12.5px;
@@ -593,12 +592,12 @@ body {
 }
 
 .chat-input::placeholder {
-  color: #5c5c68;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .chat-input:focus {
-  border-color: rgba(167, 139, 250, 0.5);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 
 .footer {

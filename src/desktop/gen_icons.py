@@ -59,9 +59,9 @@ def render(size):
     d = ImageDraw.Draw(img)
     cx = cy = big / 2
     r = CIRCLE_R / 256 * big
-    d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(18, 18, 22, 252), outline=(255, 255, 255, 255), width=max(1, int(6 / 256 * big)))
+    d.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(0, 0, 0, 252), outline=(255, 255, 255, 255), width=max(1, int(6 / 256 * big)))
     sr = SPARKLE_R / 256 * big
-    d.polygon(sparkle_polygon(cx, cy, sr, HALO_RATIO), fill=(150, 152, 168, 255))
+    d.polygon(sparkle_polygon(cx, cy, sr, HALO_RATIO), fill=(255, 255, 255, 110))
     d.polygon(sparkle_polygon(cx, cy, sr), fill=(255, 255, 255, 255))
     return img.resize((size, size), Image.LANCZOS)
 
