@@ -154,6 +154,11 @@ export const api = {
   getSettings: (): Promise<AppConfig> => invoke("get_settings"),
   /** Saves the configuration and re-registers the global hotkey. */
   saveSettings: (config: AppConfig): Promise<void> => invoke("save_settings", { config }),
+  /** Default export folder (system Downloads), home abbreviated to `~`. */
+  defaultExportDir: (): Promise<string> => invoke("default_export_dir"),
+  /** Sends a minimal chat request to the given provider credentials. */
+  testProvider: (provider: ProviderId, key: string, model: string): Promise<string> =>
+    invoke("test_provider", { provider, key, model }),
   /** Opens the settings window. */
   openSettings: (): Promise<void> => invoke("open_settings"),
   /** Closes the settings window. */

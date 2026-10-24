@@ -21,6 +21,8 @@ const PROVIDERS: Array<{ id: ProviderId; label: string }> = [
 /** Runtime session. */
 const session = {
   cfg: null as AppConfig | null,
+  /** Default export dir (display form, e.g. `~/Downloads`). */
+  defaultDir: "",
   busy: false,
   root: null as unknown as HTMLDivElement,
 };
@@ -65,7 +67,7 @@ function render(): void {
 
   const title = el("div", "title");
   title.setAttribute("data-drag", "");
-  title.innerHTML = `<span>${icon("sliders", 15)}</span><span>Настройки</span>`;
+  title.textContent = "Настройки";
   frame.appendChild(title);
 
   // Hotkey.
@@ -114,6 +116,15 @@ function render(): void {
   modelInput.addEventListener("input", () => (setModel(cfg, cfg.provider, modelInput.value)));
   frame.appendChild(modelInput);
 
+  // Provider availability check: sends a minimal request with the CURRENT
+  // form values (unsaved edits included).
+  const checkRow = el("div", "check-row");
+  const checkBtn = btn("btn-dark", "zap", "Проверить связь");
+  const checkStatus = el("span", "check-status mono");
+  checkBtn.addEventListener("click", () => void testProviderFlow(checkBtn, checkStatus));
+  checkRow.append(checkBtn, checkStatus);
+  frame.appendChild(checkRow);
+
   // Auto-paste toggle.
   const row = el("div", "toggle-row");
   const toggleLabel = el("span", "toggle-label", "Автовставка в предыдущее окно");
@@ -126,13 +137,17 @@ function render(): void {
   sw.append(swInput, track);
   row.append(toggleLabel, sw);
   frame.appendChild(row);
+  const toggleHint = el("div", "hint");
+  toggleHint.textContent =
+    "Вкл — «Вставить» сразу вставляет сниппет в окно, активное до вызова меню; выкл — только копирует в буфер";
+  frame.appendChild(toggleHint);
 
   // Export folder.
   sectionLabel(frame, "Папка экспорта");
   const dirRow = el("div", "dir-row");
   const dirLabel = el("span", "dir-label mono");
   const refreshDirLabel = () => {
-    dirLabel.textContent = cfg.export_dir.trim() || "По умолчанию (Загрузки)";
+    dirLabel.textContent = cfg.export_dir.trim() || session.defaultDir || "Не задана";
   };
   refreshDirLabel();
   const dirBtns = el("div", "dir-btns");
@@ -206,6 +221,27 @@ async function pickExportDir(cfg: AppConfig, refresh: () => void): Promise<void>
   }
 }
 
+/** Checks that the AI provider answers using the current form values. */
+async function testProviderFlow(button: HTMLButtonElement, status: HTMLElement): Promise<void> {
+  if (session.busy || !session.cfg) return;
+  session.busy = true;
+  const restore = setBusy(button, "Проверка…");
+  status.classList.remove("ok", "bad");
+  status.textContent = "";
+  try {
+    const cfg = session.cfg;
+    await api.testProvider(cfg.provider, keyOf(cfg, cfg.provider), modelOf(cfg, cfg.provider));
+    status.textContent = "Отвечает";
+    status.classList.add("ok");
+  } catch (e) {
+    status.textContent = String(e);
+    status.classList.add("bad");
+  } finally {
+    restore();
+    session.busy = false;
+  }
+}
+
 /** Persists the configuration; shows a success flash or an inline error. */
 async function saveFlow(save: HTMLButtonElement, err: HTMLElement): Promise<void> {
   if (session.busy || !session.cfg) return;
@@ -246,6 +282,7 @@ function close(): void {
 export async function main(): Promise<void> {
   session.root = document.getElementById("settings-root") as HTMLDivElement;
   session.cfg = await api.getSettings();
+  session.defaultDir = await api.defaultExportDir();
   render();
 
   document.addEventListener("keydown", (e) => {
