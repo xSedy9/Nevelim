@@ -171,9 +171,10 @@ export function isSettingsClick(x: number, y: number): boolean {
   );
 }
 
-/** Y position of settings action row `k` (stacked around the settings row). */
+/** Y position of settings action row `k`. The middle action sits exactly on
+ * the settings pill row (odd count, vertically centered stack). */
 export function settingsActionY(k: number): number {
-  return HUB.y + (k - 1.5) * SETTINGS_ACTION.step;
+  return HUB.y + (k - 1) * SETTINGS_ACTION.step;
 }
 
 /** Whether a click lands inside settings action row `k`. */

@@ -103,9 +103,11 @@ describe("settings (left side)", () => {
     expect(d.endsWith(`${SETTINGS_ACTION.rightEdge} 150`)).toBe(true);
   });
 
-  it("settings action rows fan out around the settings row", () => {
-    expect(settingsActionY(0)).toBe(HUB.y - 1.5 * SETTINGS_ACTION.step);
-    expect(settingsActionY(2)).toBe(HUB.y + 0.5 * SETTINGS_ACTION.step);
+  it("settings action rows center on the settings row", () => {
+    // Middle action (Экспортировать) sits exactly on the settings row.
+    expect(settingsActionY(1)).toBe(HUB.y);
+    expect(settingsActionY(0)).toBe(HUB.y - SETTINGS_ACTION.step);
+    expect(settingsActionY(2)).toBe(HUB.y + SETTINGS_ACTION.step);
   });
 
   it("settings action hit covers the pill rect", () => {
