@@ -121,16 +121,14 @@ function renderSelect(): void {
   promptRow(frame, null, "Выберите источник");
 
   const row = el("div", "halves");
-  const halves: Array<{ ic: IconName; title: string; sub: string; go: () => void }> = [
-    { ic: "folder", title: "Папка проекта", sub: "Автопоиск в docs/ или корне", go: () => chooseFolder() },
-    { ic: "file", title: "Файл спецификации", sub: "Прямой выбор .md, .txt, .json", go: () => chooseFile() },
+  const halves: Array<{ ic: IconName; go: () => void }> = [
+    { ic: "folder", go: () => chooseFolder() },
+    { ic: "file", go: () => chooseFile() },
   ];
   for (const h of halves) {
     const b = el("button", "half");
-    b.innerHTML =
-      `<span class="tile">${icon(h.ic, 22)}</span>` +
-      `<span class="half-title">${h.title}</span>` +
-      `<span class="half-sub">${h.sub}</span>`;
+    b.title = h.ic === "folder" ? "Папка проекта" : "Файл спецификации";
+    b.innerHTML = icon(h.ic, 46);
     b.addEventListener("click", h.go);
     row.appendChild(b);
   }

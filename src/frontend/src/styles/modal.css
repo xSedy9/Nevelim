@@ -116,17 +116,14 @@ body {
 .half {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  padding: 16px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   cursor: pointer;
   font-family: inherit;
-  color: var(--text);
+  color: #ffffff;
   transition:
     background 0.16s,
     border-color 0.16s,
@@ -139,36 +136,12 @@ body {
   transform: translateY(-2px);
 }
 
-.half:active {
-  transform: translateY(0);
-}
-
-.tile {
-  width: 48px;
-  height: 48px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 14px;
-  background: linear-gradient(150deg, #28282f, #1b1b21);
-  border: 1px solid var(--border);
-  color: #fff;
-  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
-}
-
-.half:hover .tile {
+.half:hover svg {
   transform: scale(1.1);
-  border-color: var(--border-strong);
 }
 
-.half-title {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.half-sub {
-  font-size: 11.5px;
-  color: var(--muted);
+.half svg {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
 /* ---------- Shared area ---------- */
@@ -262,10 +235,11 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: transparent;
+  background: rgba(16, 16, 19, 0.6);
   border: none;
   color: var(--muted);
   cursor: pointer;
+  z-index: 10;
   transition:
     background 0.15s,
     color 0.15s;
@@ -358,6 +332,7 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 0;
+  pointer-events: none;
 }
 
 .big-tile {
