@@ -12,7 +12,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 quick-snippets-core = { path = "../backend" }
 dirs = "6"
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-global-shortcut = "2"
