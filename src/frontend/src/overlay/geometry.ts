@@ -14,10 +14,11 @@ export const SNIPPET = { x: 795, width: 285, height: 42, step: 46, visible: 5 } 
 /** Action pill geometry. */
 export const ACTION = { x: 1125, width: 210, height: 40, step: 44 } as const;
 
-/** Settings pill geometry: mirrors the snippet column on the LEFT of the hub. */
+/** Settings pill geometry: mirrors the snippet column on the LEFT of the hub
+ * (~20% narrower than a snippet pill per user preference). */
 export const SETTINGS = {
-  x: HUB.x - 110 - 285,
-  width: 285,
+  x: HUB.x - 110 - 228,
+  width: 228,
   height: 42,
   rightEdge: HUB.x - 110,
 } as const;
