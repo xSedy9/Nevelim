@@ -271,8 +271,10 @@ mod tests {
 
     #[test]
     fn missing_key_is_rejected_before_network() {
-        let mut cfg = Config::default();
-        cfg.provider = Provider::OpenRouter;
+        let cfg = Config {
+            provider: Provider::OpenRouter,
+            ..Config::default()
+        };
         let msgs = vec![ChatMessage::new("user", "x")];
         let result = call_llm_chat(&cfg, &msgs);
         // The key check happens before any network activity; assert via a minimal runtime.

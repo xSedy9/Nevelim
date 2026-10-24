@@ -191,8 +191,10 @@ mod tests {
     fn roundtrip_preserves_fields() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("config.json");
-        let mut cfg = Config::default();
-        cfg.hotkey = "ctrl+`".to_string();
+        let mut cfg = Config {
+            hotkey: "ctrl+`".to_string(),
+            ..Config::default()
+        };
         cfg.push_recent_project("Z:/BonusHunter");
         cfg.push_recent_project("Z:/Other");
         cfg.push_recent_project("Z:/BonusHunter");
