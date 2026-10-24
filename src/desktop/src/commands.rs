@@ -198,28 +198,46 @@ pub struct SpecDto {
     pub path: Option<String>,
     /// Spec content (empty on failure).
     pub content: String,
+    /// Spec size in bytes (0 on failure).
+    pub size_bytes: u64,
     /// Human-readable failure reason (None on success).
     pub error: Option<String>,
+}
+
+/// Builds a failing DTO with a reason and no content.
+fn spec_error(error: &str) -> SpecDto {
+    SpecDto {
+        found: false,
+        path: None,
+        content: String::new(),
+        size_bytes: 0,
+        error: Some(error.to_string()),
+    }
+}
+
+/// Converts a discovered spec into a DTO, enforcing the size limit.
+fn spec_from_found(found: FoundSpec) -> SpecDto {
+    if let Err(msg) = quick_snippets_core::spec::check_size(&found.content) {
+        return spec_error(&msg);
+    }
+    let size_bytes = found.content.len() as u64;
+    SpecDto {
+        found: true,
+        path: Some(found.path.to_string_lossy().to_string()),
+        content: found.content,
+        size_bytes,
+        error: None,
+    }
 }
 
 /// Searches a project folder for a specification file.
 #[tauri::command]
 pub fn load_spec_from_folder(folder: String) -> SpecDto {
     match spec::find_specification(std::path::Path::new(&folder)) {
-        Some(FoundSpec { path, content }) => SpecDto {
-            found: true,
-            path: Some(path.to_string_lossy().to_string()),
-            content,
-            error: None,
-        },
-        None => SpecDto {
-            found: false,
-            path: None,
-            content: String::new(),
-            error: Some(
-                "Файл спецификации (docs/SPECIFICATION.md / spec.md) не найден или пуст.".into(),
-            ),
-        },
+        Some(found) => spec_from_found(found),
+        None => spec_error(
+            "Файл спецификации (docs/SPECIFICATION.md / spec.md) не найден или пуст.",
+        ),
     }
 }
 
@@ -228,32 +246,15 @@ pub fn load_spec_from_folder(folder: String) -> SpecDto {
 pub fn load_spec_from_file(file: String) -> SpecDto {
     let path = std::path::Path::new(&file);
     if !path.is_file() {
-        return SpecDto {
-            found: false,
-            path: None,
-            content: String::new(),
-            error: Some("Файл не существует.".into()),
-        };
+        return spec_error("Файл не существует.");
     }
     match std::fs::read_to_string(path) {
-        Ok(content) if !content.trim().is_empty() => SpecDto {
-            found: true,
-            path: Some(file),
+        Ok(content) if !content.trim().is_empty() => spec_from_found(FoundSpec {
+            path: path.to_path_buf(),
             content,
-            error: None,
-        },
-        Ok(_) => SpecDto {
-            found: false,
-            path: None,
-            content: String::new(),
-            error: Some("Файл не содержит текста.".into()),
-        },
-        Err(e) => SpecDto {
-            found: false,
-            path: None,
-            content: String::new(),
-            error: Some(format!("Ошибка чтения файла: {e}")),
-        },
+        }),
+        Ok(_) => spec_error("Файл не содержит текста."),
+        Err(e) => spec_error(&format!("Ошибка чтения файла: {e}")),
     }
 }
 

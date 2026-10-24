@@ -9,6 +9,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { api, type ChatMessage, type ModalInit, type SpecDto } from "../shared/ipc";
+import { formatSize } from "../shared/format";
 import { icon, type IconName } from "./icons";
 
 /** Modal phases. */
@@ -68,9 +69,10 @@ function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
 /** Clears the content area and returns a fresh frame.
  *
  * Always carries the close (top-right) button; pass a `back` handler to also
- * get an icon-only back button (top-left).
+ * get an icon-only back button (top-left). Resets status classes.
  */
 function clear(back?: () => void): HTMLDivElement {
+  session.root.classList.remove("error", "ok");
   session.root.innerHTML = "";
   const frame = el("div", "frame");
   if (back) {
@@ -208,20 +210,40 @@ async function pickFileFlow(): Promise<void> {
 // SPEC STATUS + ADAPT
 // ==========================================
 
-/** Renders the specification status: just the source icon, then the action. */
+/** Renders the specification status: full-space panel (icon + name + size),
+ * adapt action pinned to the bottom, red error note above on failure. */
 function renderSpec(spec: SpecDto, isFolder: boolean): void {
   session.phase = "spec";
   session.specIsFolder = isFolder;
   const frame = clear(renderSelect);
   frame.classList.add("shown");
-  if (!spec.found) session.root.classList.add("error");
+  session.root.classList.remove("ok");
+  if (!spec.found) {
+    session.root.classList.add("error");
+    const err = el("div", "err-line");
+    err.textContent = spec.error ?? "Неизвестная ошибка";
+    frame.appendChild(err);
+  } else {
+    session.root.classList.add("ok");
+  }
 
-  // The source itself: a single large icon, green-tinted on success,
-  // red-tinted on failure (no text per design).
+  // Full-space status panel: icon centered, file name and size beside it.
   const stage = el("div", "stage");
-  const tile = el("div", `big-tile ${spec.found ? "ok" : "bad"}`);
-  tile.innerHTML = icon(isFolder ? "folder" : "file", 36);
-  stage.appendChild(tile);
+  const inner = el("div", "stage-inner");
+  const ico = el("div", "stage-ico");
+  ico.innerHTML = icon(isFolder ? "folder" : "file", 34);
+  const meta = el("div", "stage-meta");
+  const name = el("div", "s-name");
+  name.textContent = spec.found
+    ? (spec.path ?? "").split(/[\\/]/).pop() || (isFolder ? "Папка проекта" : "Спецификация")
+    : isFolder
+      ? "Папка проекта"
+      : "Файл спецификации";
+  const size = el("div", "s-size mono");
+  size.textContent = formatSize(spec.size_bytes);
+  meta.append(name, size);
+  inner.append(ico, meta);
+  stage.appendChild(inner);
   frame.appendChild(stage);
 
   const area = el("div", "area");

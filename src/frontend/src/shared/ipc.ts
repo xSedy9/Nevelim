@@ -45,6 +45,8 @@ export interface SpecDto {
   path: string | null;
   /** Spec content (empty on failure). */
   content: string;
+  /** Spec size in bytes (0 on failure). */
+  size_bytes: number;
   /** Human-readable failure reason. */
   error: string | null;
 }

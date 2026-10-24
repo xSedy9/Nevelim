@@ -153,11 +153,9 @@ body {
 /* ---------- Shared area ---------- */
 
 .area {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  min-height: 0;
 }
 
 /* ---------- Buttons ---------- */
@@ -327,43 +325,81 @@ body {
   color: var(--muted);
 }
 
-/* ---------- Spec stage: the source icon ---------- */
+/* ---------- Spec stage ---------- */
+
+#modal-root.ok .frame {
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(34, 197, 94, 0.18),
+    0 0 44px rgba(34, 197, 94, 0.07);
+}
+
+.err-line {
+  color: var(--err);
+  font-size: 12px;
+  text-align: center;
+  padding-bottom: 10px;
+  word-break: break-word;
+}
 
 .stage {
   flex: 1;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 0;
-  pointer-events: none;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
 }
 
-.big-tile {
-  width: 104px;
-  height: 104px;
+.stage.bad {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.stage-inner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+  min-width: 0;
+}
+
+.stage-ico {
+  width: 74px;
+  height: 74px;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 26px;
+  border-radius: 18px;
   background: linear-gradient(150deg, #28282f, #1b1b21);
   border: 1px solid var(--border);
   color: #ffffff;
 }
 
-.big-tile.ok {
-  border-color: rgba(34, 197, 94, 0.4);
-  box-shadow:
-    0 0 0 1px rgba(34, 197, 94, 0.15),
-    0 0 44px rgba(34, 197, 94, 0.12);
+.stage-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
-.big-tile.bad {
-  border-color: rgba(239, 68, 68, 0.45);
-  box-shadow:
-    0 0 0 1px rgba(239, 68, 68, 0.18),
-    0 0 44px rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
+.s-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  word-break: break-all;
 }
+
+.s-size {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Buttons ---------- */
 
 /* ---------- Phase 3: result ---------- */
 

@@ -8,6 +8,42 @@
 
 use std::path::{Path, PathBuf};
 
+/// Maximum accepted specification size (2 MB) - a sane guard against feeding
+/// entire repositories to the AI provider.
+pub const MAX_SPEC_FILE_BYTES: usize = 2 * 1024 * 1024;
+
+/// Formats a byte count with auto-scaled units (Б -> КБ -> МБ -> ГБ).
+///
+/// Matches the UI formatting so error messages and labels agree.
+pub fn format_size(bytes: u64) -> String {
+    const KB: f64 = 1024.0;
+    let b = bytes as f64;
+    if b < KB {
+        format!("{bytes} Б")
+    } else if b < KB * KB {
+        format!("{:.1} КБ", b / KB)
+    } else if b < KB * KB * KB {
+        format!("{:.1} МБ", b / (KB * KB))
+    } else {
+        format!("{:.1} ГБ", b / (KB * KB * KB))
+    }
+}
+
+/// Validates the specification size, returning a user-facing error message
+/// when it exceeds [`MAX_SPEC_FILE_BYTES`].
+pub fn check_size(content: &str) -> Result<(), String> {
+    let bytes = content.len() as u64;
+    if bytes > MAX_SPEC_FILE_BYTES as u64 {
+        Err(format!(
+            "Файл слишком большой: {} (лимит {})",
+            format_size(bytes),
+            format_size(MAX_SPEC_FILE_BYTES as u64)
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 /// Preferred specification file names, in priority order.
 pub const PREFERRED_NAMES: [&str; 5] = [
     "SPECIFICATION.md",
@@ -95,6 +131,24 @@ pub fn find_specification(root: &Path) -> Option<FoundSpec> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn format_size_scales_units() {
+        assert_eq!(format_size(0), "0 Б");
+        assert_eq!(format_size(512), "512 Б");
+        assert_eq!(format_size(2048), "2.0 КБ");
+        assert_eq!(format_size(1_572_864), "1.5 МБ");
+        assert_eq!(format_size(3 * 1024 * 1024 * 1024 + 1), "3.0 ГБ");
+    }
+
+    #[test]
+    fn check_size_allows_within_limit_and_reports_overflow() {
+        assert!(check_size(&"a".repeat(MAX_SPEC_FILE_BYTES)).is_ok());
+        let err = check_size(&(0..MAX_SPEC_FILE_BYTES + 10).map(|_| "ж").collect::<String>());
+        let msg = err.unwrap_err();
+        assert!(msg.contains("слишком большой"));
+        assert!(msg.contains("лимит"));
+    }
 
     #[test]
     fn prefers_docs_specification_over_root_readme() {
