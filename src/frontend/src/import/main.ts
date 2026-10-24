@@ -9,6 +9,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 
 import { api, type ImportCheckDto } from "../shared/ipc";
 import { swapButtonContent } from "../shared/anim";
+import { logError } from "../shared/logger";
 import { icon } from "../shared/icons";
 
 /** Runtime session. */
@@ -146,7 +147,7 @@ async function importFlow(imp: HTMLButtonElement): Promise<void> {
     await api.importTemplate(session.file);
     close();
   } catch (e) {
-    console.error("import failed:", e);
+    logError("import", e);
     renderPick();
   } finally {
     restore();
@@ -192,4 +193,4 @@ export async function main(): Promise<void> {
   });
 }
 
-main().catch((e) => console.error("import init failed", e));
+main().catch((e) => logError("import init", e));

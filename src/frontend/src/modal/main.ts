@@ -11,6 +11,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { api, type ChatMessage, type ModalInit, type SpecDto } from "../shared/ipc";
 import { swapButtonContent } from "../shared/anim";
 import { formatSize } from "../shared/format";
+import { logError } from "../shared/logger";
 import { icon, type IconName } from "../shared/icons";
 
 /** Modal phases. */
@@ -358,7 +359,7 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
     session.chat = [];
     renderResult(result);
   } catch (e) {
-    console.error("adapt failed:", e);
+    logError("adapt", e);
     renderSpec(spec, session.specIsFolder);
     showErrorModal(aiErrorText(e));
   } finally {
@@ -447,7 +448,7 @@ async function refineFlow(
     ta.value = res;
     input.value = "";
   } catch (e) {
-    console.error("refine failed:", e);
+    logError("refine", e);
     showErrorModal(aiErrorText(e));
   } finally {
     restore();
@@ -512,4 +513,4 @@ export async function main(): Promise<void> {
   });
 }
 
-main().catch((e) => console.error("modal init failed", e));
+main().catch((e) => logError("modal init", e));

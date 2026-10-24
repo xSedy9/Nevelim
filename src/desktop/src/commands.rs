@@ -22,13 +22,19 @@ use quick_snippets_core::spec::{self, FoundSpec};
 use quick_snippets_core::templates::{self, TemplateEntry};
 
 use crate::focus;
+use crate::logging;
 use crate::overlay;
 use crate::state::{AppState, ModalInit};
 
 /// Base directory for user data (config, templates, history) — resolved by
 /// the core crate (exe dir -> workspace root -> cwd).
-fn base_dir() -> PathBuf {
+pub(crate) fn base_dir() -> PathBuf {
     quick_snippets_core::config::resolve_base_dir()
+}
+
+/// Logs an operation failure before it is surfaced to the frontend.
+fn log_err(scope: &str, error: &str) {
+    logging::error(&format!("{scope}: {error}"));
 }
 
 /// Sanitized configuration snapshot for the frontend (API keys stripped).
@@ -96,11 +102,14 @@ pub fn get_settings() -> Config {
 #[tauri::command]
 pub fn save_settings(app: AppHandle, config: Config) -> Result<(), String> {
     if quick_snippets_core::hotkey::parse_hotkey(&config.hotkey).is_none() {
-        return Err("Некорректный формат хоткея. Пример: alt+shift+v".to_string());
+        let message = "Некорректный формат хоткея. Пример: alt+shift+v".to_string();
+        log_err("save_settings", &message);
+        return Err(message);
     }
-    config
-        .save_to(&config::resolve_config_path())
-        .map_err(|e| e.to_string())?;
+    if let Err(e) = config.save_to(&config::resolve_config_path()) {
+        log_err("save_settings", &e.to_string());
+        return Err(e.to_string());
+    }
     crate::register_hotkey_from_config(&app);
     Ok(())
 }
@@ -207,10 +216,16 @@ pub async fn test_provider(provider: String, key: String, model: String) -> Resu
         }
     }
     let messages = vec![ChatMessage::new("user", "ping")];
-    ai::call_llm_chat(&config, &messages)
-        .await
-        .map(|_| "ok".to_string())
-        .map_err(err_to_string)
+    match ai::call_llm_chat(&config, &messages).await {
+        Ok(_) => {
+            logging::info(&format!("provider check ok: {provider}"));
+            Ok("ok".to_string())
+        }
+        Err(e) => {
+            log_err("provider_check", &e.to_string());
+            Err(e.to_string())
+        }
+    }
 }
 
 /// Copies every template into the export folder.
@@ -223,11 +238,21 @@ pub fn export_templates(app: AppHandle) -> Result<String, String> {
     let cfg_path = config::resolve_config_path();
     let cfg = config::load_or_default(&cfg_path);
     let folder = resolve_export_dir(&cfg);
-    let zip_path = export::export_backup(&cfg_path, &base_dir().join("templates"), &folder)
-        .map_err(|e| e.to_string())?;
-    app.opener()
+    let zip_path = match export::export_backup(&cfg_path, &base_dir().join("templates"), &folder) {
+        Ok(path) => path,
+        Err(e) => {
+            log_err("export", &e.to_string());
+            return Err(e.to_string());
+        }
+    };
+    if let Err(e) = app
+        .opener()
         .open_path(folder.to_string_lossy().into_owned(), None::<&str>)
-        .map_err(|e| e.to_string())?;
+    {
+        log_err("export", &e.to_string());
+        return Err(e.to_string());
+    }
+    logging::info(&format!("export backup: {}", zip_path.display()));
     Ok(zip_path.to_string_lossy().into_owned())
 }
 
@@ -291,12 +316,18 @@ pub fn import_template(file: String) -> Result<String, String> {
     if !src.is_file() {
         return Err("Файл не существует.".to_string());
     }
-    let imported = export::import_backup(
+    let imported = match export::import_backup(
         src,
         &base_dir().join("templates"),
         &config::resolve_config_path(),
-    )
-    .map_err(|e| e.to_string())?;
+    ) {
+        Ok(count) => count,
+        Err(e) => {
+            log_err("import", &e.to_string());
+            return Err(e.to_string());
+        }
+    };
+    logging::info(&format!("import backup: {imported} template(s)"));
     Ok(format!("Импортировано шаблонов: {imported}"))
 }
 
@@ -371,6 +402,12 @@ pub fn copy_text(app: AppHandle, text: String) -> Result<(), String> {
     app.clipboard().write_text(&text).map_err(|e| e.to_string())
 }
 
+/// Persists a frontend log line (console errors forwarded to the file log).
+#[tauri::command]
+pub fn log_frontend(level: String, message: String) {
+    logging::write(&level, &message);
+}
+
 /// Copies `text` to the clipboard and, unless auto-paste is disabled in the
 /// config, pastes it into the previously focused window.
 #[tauri::command]
@@ -392,7 +429,11 @@ pub async fn paste_snippet(
         ))
         .await;
     }
-    quick_snippets_core::paste::send_paste_keystroke().map_err(|e| e.to_string())
+    if let Err(e) = quick_snippets_core::paste::send_paste_keystroke() {
+        log_err("paste", &e.to_string());
+        return Err(e.to_string());
+    }
+    Ok(())
 }
 
 /// Saves adapted content into the local history directory.

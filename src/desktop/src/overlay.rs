@@ -183,7 +183,9 @@ pub fn toggle(app: &AppHandle) {
             std::thread::sleep(Duration::from_millis(HIDE_CONFIRM_BUDGET_MS));
             let still_visible = *handle.state::<AppState>().overlay_visible.lock().unwrap();
             if still_visible {
-                eprintln!("[overlay] frontend did not hide in time, force-hiding");
+                let message = "frontend did not hide in time, force-hiding";
+                eprintln!("[overlay] {message}");
+                crate::logging::warn(message);
                 hide(&handle);
             }
         });

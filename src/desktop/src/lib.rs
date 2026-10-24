@@ -6,6 +6,7 @@
 
 pub mod commands;
 pub mod focus;
+pub mod logging;
 pub mod overlay;
 pub mod state;
 
@@ -58,13 +59,16 @@ pub fn run() {
             commands::load_spec_from_file,
             commands::set_overlay_input,
             commands::hide_overlay,
+            commands::log_frontend,
             commands::open_modal,
             commands::close_modal,
         ])
         .setup(|app| {
+            logging::init(logging::log_path(&commands::base_dir()));
             overlay::create_overlay(app.handle())?;
             overlay::start_cursor_hit_test(app.handle());
             register_hotkey_from_config(app.handle());
+            logging::info("app started");
             Ok(())
         })
         .run(tauri::generate_context!())
@@ -80,7 +84,7 @@ pub(crate) fn load_config() -> quick_snippets_core::config::Config {
 pub(crate) fn register_hotkey_from_config(app: &tauri::AppHandle) {
     let hotkey = load_config().hotkey;
     if let Err(e) = app.global_shortcut().unregister_all() {
-        eprintln!("[hotkey] unregister_all failed: {e}");
+        logging::warn(&format!("hotkey unregister_all failed: {e}"));
     }
     match app
         .global_shortcut()
@@ -89,7 +93,7 @@ pub(crate) fn register_hotkey_from_config(app: &tauri::AppHandle) {
                 overlay::toggle(app);
             }
         }) {
-        Ok(()) => println!("[hotkey] registered: {hotkey}"),
-        Err(e) => eprintln!("[hotkey] failed to register '{hotkey}': {e}"),
+        Ok(()) => logging::info(&format!("hotkey registered: {hotkey}")),
+        Err(e) => logging::error(&format!("hotkey failed to register '{hotkey}': {e}")),
     }
 }

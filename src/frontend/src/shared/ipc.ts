@@ -163,6 +163,9 @@ export const api = {
   openSettings: (): Promise<void> => invoke("open_settings"),
   /** Closes the settings window. */
   closeSettings: (): Promise<void> => invoke("close_settings"),
+  /** Appends a frontend line to the desktop file log. */
+  logLine: (level: string, message: string): Promise<void> =>
+    invoke("log_frontend", { level, message }),
   /** Packs config + templates into a timestamped zip in the export folder and opens it. */
   exportTemplates: (): Promise<string> => invoke("export_templates"),
   /** Validates a candidate backup archive. */
