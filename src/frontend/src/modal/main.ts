@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Adaptation modal entry point.
  *
  * Modern dark UI driven by inline SVG icons: phase 1 - source selection,
@@ -91,13 +91,13 @@ function clear(back?: () => void): HTMLDivElement {
   if (back) {
     const backBtn = el("button", "icon-btn left");
     backBtn.innerHTML = icon("arrow-left", 14);
-    backBtn.title = "Назад";
+    backBtn.title = "Back";
     backBtn.addEventListener("click", back);
     frame.appendChild(backBtn);
   }
   const closeBtn = el("button", "icon-btn");
   closeBtn.innerHTML = icon("x", 14);
-  closeBtn.title = "Закрыть (Esc)";
+  closeBtn.title = "Close (Esc)";
   closeBtn.addEventListener("click", () => close());
   frame.appendChild(closeBtn);
   session.root.appendChild(frame);
@@ -136,7 +136,7 @@ function renderSelect(): void {
   session.phase = "select";
   const frame = clear();
 
-  promptStrip(frame, "Выберите источник");
+  promptStrip(frame, "Select source");
 
   const row = el("div", "halves");
   const halves: Array<{ ic: IconName; go: () => void }> = [
@@ -145,7 +145,7 @@ function renderSelect(): void {
   ];
   for (const h of halves) {
     const b = el("button", "half");
-    b.title = h.ic === "folder" ? "Папка проекта" : "Файл спецификации";
+    b.title = h.ic === "folder" ? "Project folder" : "Specification file";
     b.innerHTML = icon(h.ic, 46);
     b.addEventListener("click", h.go);
     row.appendChild(b);
@@ -166,8 +166,8 @@ function chooseFolder(): void {
   const zone = el("div", "dropzone full");
   zone.innerHTML =
     `<span class="dz-ico">${icon("folder", 26)}</span>` +
-    `<span class="dz-title">Выберите папку проекта</span>` +
-    `<span class="dz-sub">Автопоиск в docs/ или корне проекта:</span>` +
+    `<span class="dz-title">Select project folder</span>` +
+    `<span class="dz-sub">Auto-detection in docs/ or project root:</span>` +
     `<span class="dz-files mono">SPECIFICATION.md · spec.md · SPEC.md · README.md · *.md</span>`;
   zone.addEventListener("click", () => void pickFolderFlow());
   frame.appendChild(zone);
@@ -199,7 +199,7 @@ function chooseFile(): void {
   const zone = el("div", "dropzone full");
   zone.innerHTML =
     `<span class="dz-ico">${icon("file", 26)}</span>` +
-    `<span class="dz-title">Выберите файл спецификации</span>` +
+    `<span class="dz-title">Select specification file</span>` +
     `<span class="dz-sub">.md, .txt, .json, .yaml</span>`;
   zone.addEventListener("click", () => void pickFileFlow());
   frame.appendChild(zone);
@@ -241,10 +241,10 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
   const meta = el("div", "stage-meta");
   const name = el("div", "s-name");
   name.textContent = spec.found
-    ? (spec.path ?? "").split(/[\\/]/).pop() || (isFolder ? "Папка проекта" : "Спецификация")
+    ? (spec.path ?? "").split(/[\\/]/).pop() || (isFolder ? "Project folder" : "Specification")
     : isFolder
-      ? "Папка проекта"
-      : "Файл спецификации";
+      ? "Project folder"
+      : "Specification file";
   const size = el("div", "s-size mono");
   size.textContent = formatSize(spec.size_bytes);
   meta.append(name, size);
@@ -254,17 +254,17 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
 
   if (failed) {
     const err = el("div", "err-line");
-    err.textContent = errorMessage ?? spec.error ?? "Неизвестная ошибка";
+    err.textContent = errorMessage ?? spec.error ?? "Unknown error";
     frame.appendChild(err);
   }
 
   const area = el("div", "area");
   if (spec.found) {
-    const adapt = btn("btn-primary", "sparkle", "Адаптировать");
+    const adapt = btn("btn-primary", "sparkle", "Adapt");
     adapt.addEventListener("click", () => void adaptFlow(adapt));
     area.appendChild(adapt);
   } else {
-    const retry = btn("btn-dark", isFolder ? "folder" : "file", "Повторить выбор");
+    const retry = btn("btn-dark", isFolder ? "folder" : "file", "Choose another");
     retry.addEventListener("click", () => (isFolder ? chooseFolder() : chooseFile()));
     area.appendChild(retry);
   }
@@ -285,15 +285,15 @@ function renderSpec(spec: SpecDto, isFolder: boolean, errorMessage?: string): vo
 function aiErrorText(e: unknown): string {
   const raw = String(e);
   if (/api[-_ ]?key|unauthorized|401|403/i.test(raw)) {
-    return "Проверьте API-ключ в config.json или доступность провайдера.";
+    return "Check API key in config.json or provider availability.";
   }
   if (/timed out|timeout/i.test(raw)) {
-    return "Таймаут ответа нейросети. Попробуйте ещё раз.";
+    return "AI response timed out. Please try again.";
   }
   return raw;
 }
 
-/** Shows a modal-in-modal error card: warning icon left, "Ошибка" title with
+/** Shows a modal-in-modal error card: warning icon left, "Error" title with
  * the message text beside it, OK button at the bottom right.
  * Dismissed by the OK button or a backdrop click; plays a fade-out exit. */
 function showErrorModal(message: string): void {
@@ -312,7 +312,7 @@ function showErrorModal(message: string): void {
   const ico = el("span", "mini-ico");
   ico.innerHTML = icon("warning", 20);
   const text = el("div", "mini-text");
-  text.appendChild(el("div", "mini-title", "Ошибка"));
+  text.appendChild(el("div", "mini-title", "Error"));
   const msg = el("div", "mini-msg");
   msg.textContent = message;
   text.appendChild(msg);
@@ -353,7 +353,7 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
   if (session.busy || !session.spec?.found) return;
   const spec = session.spec;
   session.busy = true;
-  const restore = setBusy(adapt, "Адаптация…");
+  const restore = setBusy(adapt, "Adapting…");
   try {
     const result = await api.adaptTemplate(spec.content, session.init?.snippet_content ?? "");
     session.chat = [];
@@ -380,7 +380,7 @@ function renderResult(text: string): void {
 
   const head = el("div", "result-head");
   head.setAttribute("data-drag", "");
-  const label = el("div", "result-label", "Адаптированный результат");
+  const label = el("div", "result-label", "Adapted result");
   const chip = el("span", "chip mono");
   chip.innerHTML = `${icon("zap", 11)}<span>${session.init?.snippet_name ?? ""}</span>`;
   head.append(label, chip);
@@ -395,8 +395,8 @@ function renderResult(text: string): void {
   const chat = el("div", "chat");
   const input = document.createElement("input");
   input.className = "chat-input";
-  input.placeholder = "Что изменить? Например: сделай короче, добавь типизацию…";
-  const send = btn("btn-dark", "send", "Отправить");
+  input.placeholder = "What to change? E.g.: make it shorter, add typing…";
+  const send = btn("btn-dark", "send", "Send");
   send.addEventListener("click", () => void refineFlow(input, send, ta));
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") void refineFlow(input, send, ta);
@@ -405,7 +405,7 @@ function renderResult(text: string): void {
   frame.appendChild(chat);
 
   const footer = el("div", "footer");
-  const accept = btn("btn-primary", "check", "Принять и вставить");
+  const accept = btn("btn-primary", "check", "Accept and paste");
   accept.addEventListener("click", () => {
     const final = ta.value.trim();
     if (!final || !session.init) return;
@@ -414,7 +414,7 @@ function renderResult(text: string): void {
       .then(() => api.pasteSnippet(final))
       .then(close);
   });
-  const copy = btn("btn-dark", "copy", "Скопировать");
+  const copy = btn("btn-dark", "copy", "Copy");
   copy.addEventListener("click", () => {
     const final = ta.value.trim();
     if (!final || !session.init) return;
@@ -437,10 +437,10 @@ async function refineFlow(
   const spec = session.spec;
   if (!prompt || session.busy || !spec?.found) return;
   session.busy = true;
-  const restore = setBusy(send, "Думает…");
+  const restore = setBusy(send, "Thinking…");
   session.chat.push({
     role: "user",
-    content: `УТОЧНЕНИЕ: ${prompt}\n\nТЕКУЩИЙ ВАРИАНТ:\n${ta.value}`,
+    content: `REFINEMENT: ${prompt}\n\nCURRENT VERSION:\n${ta.value}`,
   });
   try {
     const res = await api.refineResult(session.chat);
@@ -474,7 +474,7 @@ function focusables(): HTMLElement[] {
 export async function main(): Promise<void> {
   session.root = document.getElementById("modal-root") as HTMLDivElement;
   const frame = clear();
-  frame.appendChild(el("div", "loading muted", "Загрузка…"));
+  frame.appendChild(el("div", "loading muted", "Loading…"));
 
   session.init = await api.getModalInit();
   if (!session.init) {

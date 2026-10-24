@@ -102,7 +102,7 @@ pub fn get_settings() -> Config {
 #[tauri::command]
 pub fn save_settings(app: AppHandle, config: Config) -> Result<(), String> {
     if quick_snippets_core::hotkey::parse_hotkey(&config.hotkey).is_none() {
-        let message = "Некорректный формат хоткея. Пример: alt+shift+v".to_string();
+        let message = "Invalid hotkey format. Example: alt+shift+v".to_string();
         log_err("save_settings", &message);
         return Err(message);
     }
@@ -129,7 +129,7 @@ pub async fn open_settings(app: AppHandle) -> Result<(), String> {
         return Ok(());
     }
     tauri::WebviewWindowBuilder::new(&app, "settings", WebviewUrl::App("settings.html".into()))
-        .title("Nevelim — Настройки")
+        .title("Nevelim — Settings")
         .inner_size(480.0, 560.0)
         .transparent(true)
         .decorations(false)
@@ -199,7 +199,7 @@ pub async fn test_provider(provider: String, key: String, model: String) -> Resu
         "gemini" => Provider::Gemini,
         "openai" => Provider::OpenAi,
         "openrouter" => Provider::OpenRouter,
-        _ => return Err("Неизвестный провайдер.".to_string()),
+        _ => return Err("Unknown provider.".to_string()),
     };
     match config.provider {
         Provider::Gemini => {
@@ -284,7 +284,7 @@ fn import_error(error: &str) -> ImportCheckDto {
 pub fn check_import_file(file: String) -> ImportCheckDto {
     let path = std::path::Path::new(&file);
     if !path.is_file() {
-        return import_error("Файл не существует.");
+        return import_error("File does not exist.");
     }
     let ext = path
         .extension()
@@ -292,7 +292,7 @@ pub fn check_import_file(file: String) -> ImportCheckDto {
         .map(|e| e.to_lowercase())
         .unwrap_or_default();
     if ext != "zip" {
-        return import_error("Подходит только архив экспорта (.zip).");
+        return import_error("Only export archives (.zip) are supported.");
     }
     match export::validate_backup(path) {
         Ok(info) if info.has_config || info.templates > 0 => ImportCheckDto {
@@ -304,8 +304,8 @@ pub fn check_import_file(file: String) -> ImportCheckDto {
             size_bytes: std::fs::metadata(path).map(|m| m.len()).unwrap_or(0),
             error: None,
         },
-        Ok(_) => import_error("Архив не содержит настроек или шаблонов."),
-        Err(e) => import_error(&format!("Архив повреждён: {e}")),
+        Ok(_) => import_error("Archive contains no settings or templates."),
+        Err(e) => import_error(&format!("Archive is corrupted: {e}")),
     }
 }
 
@@ -314,7 +314,7 @@ pub fn check_import_file(file: String) -> ImportCheckDto {
 pub fn import_template(file: String) -> Result<String, String> {
     let src = std::path::Path::new(&file);
     if !src.is_file() {
-        return Err("Файл не существует.".to_string());
+        return Err("File does not exist.".to_string());
     }
     let imported = match export::import_backup(
         src,
@@ -328,7 +328,7 @@ pub fn import_template(file: String) -> Result<String, String> {
         }
     };
     logging::info(&format!("import backup: {imported} template(s)"));
-    Ok(format!("Импортировано шаблонов: {imported}"))
+    Ok(format!("Templates imported: {imported}"))
 }
 
 /// Opens (or focuses) the import wizard window.
@@ -340,7 +340,7 @@ pub async fn open_import(app: AppHandle) -> Result<(), String> {
         return Ok(());
     }
     tauri::WebviewWindowBuilder::new(&app, "import", WebviewUrl::App("import.html".into()))
-        .title("Импорт сниппета")
+        .title("Import Templates")
         .inner_size(440.0, 380.0)
         .transparent(true)
         .decorations(false)
@@ -390,7 +390,7 @@ pub async fn refine_result(chat_history: Vec<ChatMessage>) -> Result<String, Str
 fn err_to_string(e: CoreError) -> String {
     let msg = e.to_string();
     if matches!(e, CoreError::Http(_)) && msg.to_lowercase().contains("timed out") {
-        "Таймаут ответа нейросети. Попробуйте еще раз.".to_string()
+        "AI response timed out. Please try again.".to_string()
     } else {
         msg
     }
@@ -476,7 +476,7 @@ pub async fn pick_file(app: AppHandle) -> Result<Option<String>, String> {
             .dialog()
             .file()
             .add_filter(
-                "Документы спецификаций",
+                "Specification documents",
                 &["md", "txt", "json", "yaml", "yml"],
             )
             .blocking_pick_file()
@@ -493,7 +493,7 @@ pub async fn pick_import_file(app: AppHandle) -> Result<Option<String>, String> 
         Ok(app
             .dialog()
             .file()
-            .add_filter("Архив экспорта", &["zip"])
+            .add_filter("Export archive", &["zip"])
             .blocking_pick_file()
             .and_then(|fp| fp.as_path().map(|p| p.to_string_lossy().to_string())))
     })
@@ -548,7 +548,7 @@ pub fn load_spec_from_folder(folder: String) -> SpecDto {
     match spec::find_specification(std::path::Path::new(&folder)) {
         Some(found) => spec_from_found(found),
         None => {
-            spec_error("Файл спецификации (docs/SPECIFICATION.md / spec.md) не найден или пуст.")
+            spec_error("Specification file (docs/SPECIFICATION.md / spec.md) not found or empty.")
         }
     }
 }
@@ -558,15 +558,15 @@ pub fn load_spec_from_folder(folder: String) -> SpecDto {
 pub fn load_spec_from_file(file: String) -> SpecDto {
     let path = std::path::Path::new(&file);
     if !path.is_file() {
-        return spec_error("Файл не существует.");
+        return spec_error("File does not exist.");
     }
     match std::fs::read_to_string(path) {
         Ok(content) if !content.trim().is_empty() => spec_from_found(FoundSpec {
             path: path.to_path_buf(),
             content,
         }),
-        Ok(_) => spec_error("Файл не содержит текста."),
-        Err(e) => spec_error(&format!("Ошибка чтения файла: {e}")),
+        Ok(_) => spec_error("File contains no text."),
+        Err(e) => spec_error(&format!("Error reading file: {e}")),
     }
 }
 

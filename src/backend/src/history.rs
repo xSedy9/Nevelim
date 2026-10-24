@@ -60,10 +60,7 @@ mod tests {
     #[test]
     fn sanitize_replaces_special_chars() {
         // Alphanumerics (including Cyrillic) and -_ survive; everything else collapses.
-        assert_eq!(
-            sanitize_name("01 Стиль: названий/2"),
-            "01_Стиль__названий_2"
-        );
+        assert_eq!(sanitize_name("01 Style: naming/2"), "01_Style__naming_2");
         assert_eq!(sanitize_name("ok-name_2.md"), "ok-name_2_md");
     }
 
@@ -83,7 +80,7 @@ mod tests {
     fn save_creates_dir_and_file() {
         let dir = tempfile::tempdir().unwrap();
         let history = dir.path().join("nested").join("history");
-        let path = save_history(&history, "01 Стиль", "# result").unwrap();
+        let path = save_history(&history, "01 Style", "# result").unwrap();
         assert!(path.is_file());
         assert!(path.extension().and_then(|e| e.to_str()) == Some("md"));
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "# result");

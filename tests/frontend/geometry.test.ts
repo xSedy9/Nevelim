@@ -104,7 +104,7 @@ describe("settings (left side)", () => {
   });
 
   it("settings action rows center on the settings row", () => {
-    // Middle action (Экспортировать) sits exactly on the settings row.
+    // Middle action (Export) sits exactly on the settings row.
     expect(settingsActionY(1)).toBe(HUB.y);
     expect(settingsActionY(0)).toBe(HUB.y - SETTINGS_ACTION.step);
     expect(settingsActionY(2)).toBe(HUB.y + SETTINGS_ACTION.step);

@@ -91,7 +91,7 @@ pub fn parse_gemini_response(body: &serde_json::Value) -> CoreResult<String> {
         })
         .unwrap_or_default();
     if text.trim().is_empty() {
-        Err(CoreError::Other("Gemini вернул пустой ответ".into()))
+        Err(CoreError::Other("Gemini returned empty response".into()))
     } else {
         Ok(text.trim().to_string())
     }
@@ -103,7 +103,7 @@ pub fn parse_openai_response(body: &serde_json::Value) -> CoreResult<String> {
         .as_str()
         .unwrap_or_default();
     if text.trim().is_empty() {
-        Err(CoreError::Other("Провайдер вернул пустой ответ".into()))
+        Err(CoreError::Other("Provider returned empty response".into()))
     } else {
         Ok(text.trim().to_string())
     }
@@ -118,7 +118,7 @@ fn require_key(config: &Config, provider: Provider) -> CoreResult<String> {
     };
     if key.trim().is_empty() {
         Err(CoreError::Other(format!(
-            "Не задан API-ключ провайдера {provider:?} в config.json"
+            "API key not configured for provider {provider:?} in config.json"
         )))
     } else {
         // Trim stray whitespace/newlines/quotes so dirty config edits do not
@@ -183,9 +183,9 @@ pub async fn call_llm_chat(config: &Config, messages: &[ChatMessage]) -> CoreRes
         let hint = if text.to_lowercase().contains("api key")
             || text.to_lowercase().contains("unauthorized")
         {
-            "Проверьте API-ключ в config.json или доступность провайдера."
+            "Check API key in config.json or provider availability."
         } else {
-            "Ошибка провайдера, попробуйте позже."
+            "Provider error, please try again later."
         };
         return Err(CoreError::Other(format!("{status}: {hint}")));
     }
@@ -199,13 +199,13 @@ pub fn build_adaptation_messages(spec_content: &str, template_content: &str) -> 
     vec![
         ChatMessage::new(
             "system",
-            "Ты — тимлид и системный архитектор. Адаптируй переданный шаблон под специфику \
-             проекта на основе спецификации. Сохраняй стиль автора. Верни ТОЛЬКО готовый результат.",
+            "You are a team lead and system architect. Adapt the provided template to match the project specifics \
+             based on the specification. Preserve the author's style. Return ONLY the final result.",
         ),
         ChatMessage::new(
             "user",
             format!(
-                "СПЕЦИФИКАЦИЯ:\n{}\n\nШАБЛОН ДЛЯ АДАПТАЦИИ:\n{}",
+                "SPECIFICATION:\n{}\n\nTEMPLATE TO ADAPT:\n{}",
                 clamp_spec(spec_content),
                 template_content
             ),
@@ -221,8 +221,8 @@ mod tests {
     fn clamp_spec_respects_budget_and_char_boundaries() {
         let ascii = "a".repeat(MAX_SPEC_BYTES + 100);
         assert_eq!(clamp_spec(&ascii).len(), MAX_SPEC_BYTES);
-        // Multibyte string must not be cut inside a character.
-        let uni = "ж".repeat(5000);
+        // Multibyte string must not be cut inside a character (2-byte UTF-8).
+        let uni = "\u{00E9}".repeat(5000);
         let clamped = clamp_spec(&uni);
         assert!(clamped.len() <= MAX_SPEC_BYTES);
         assert_eq!(clamped.chars().count(), MAX_SPEC_BYTES / 2);
@@ -279,14 +279,14 @@ mod tests {
         let result = call_llm_chat(&cfg, &msgs);
         // The key check happens before any network activity; assert via a minimal runtime.
         let err = tokio::runtime::Runtime::new().unwrap().block_on(result);
-        assert!(err.unwrap_err().to_string().contains("API-ключ"));
+        assert!(err.unwrap_err().to_string().contains("API key"));
     }
 
     #[test]
     fn adaptation_messages_shape() {
         let msgs = build_adaptation_messages("spec", "template");
         assert_eq!(msgs[0].role, "system");
-        assert!(msgs[1].content.contains("СПЕЦИФИКАЦИЯ"));
-        assert!(msgs[1].content.contains("ШАБЛОН"));
+        assert!(msgs[1].content.contains("SPECIFICATION"));
+        assert!(msgs[1].content.contains("TEMPLATE"));
     }
 }

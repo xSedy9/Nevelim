@@ -12,20 +12,20 @@ use std::path::{Path, PathBuf};
 /// entire repositories to the AI provider.
 pub const MAX_SPEC_FILE_BYTES: usize = 2 * 1024 * 1024;
 
-/// Formats a byte count with auto-scaled units (Б -> КБ -> МБ -> ГБ).
+/// Formats a byte count with auto-scaled units (B -> KB -> MB -> GB).
 ///
 /// Matches the UI formatting so error messages and labels agree.
 pub fn format_size(bytes: u64) -> String {
     const KB: f64 = 1024.0;
     let b = bytes as f64;
     if b < KB {
-        format!("{bytes} Б")
+        format!("{bytes} B")
     } else if b < KB * KB {
-        format!("{:.1} КБ", b / KB)
+        format!("{:.1} KB", b / KB)
     } else if b < KB * KB * KB {
-        format!("{:.1} МБ", b / (KB * KB))
+        format!("{:.1} MB", b / (KB * KB))
     } else {
-        format!("{:.1} ГБ", b / (KB * KB * KB))
+        format!("{:.1} GB", b / (KB * KB * KB))
     }
 }
 
@@ -35,7 +35,7 @@ pub fn check_size(content: &str) -> Result<(), String> {
     let bytes = content.len() as u64;
     if bytes > MAX_SPEC_FILE_BYTES as u64 {
         Err(format!(
-            "Файл слишком большой: {} (лимит {})",
+            "File is too large: {} (limit {})",
             format_size(bytes),
             format_size(MAX_SPEC_FILE_BYTES as u64)
         ))
@@ -134,11 +134,11 @@ mod tests {
 
     #[test]
     fn format_size_scales_units() {
-        assert_eq!(format_size(0), "0 Б");
-        assert_eq!(format_size(512), "512 Б");
-        assert_eq!(format_size(2048), "2.0 КБ");
-        assert_eq!(format_size(1_572_864), "1.5 МБ");
-        assert_eq!(format_size(3 * 1024 * 1024 * 1024 + 1), "3.0 ГБ");
+        assert_eq!(format_size(0), "0 B");
+        assert_eq!(format_size(512), "512 B");
+        assert_eq!(format_size(2048), "2.0 KB");
+        assert_eq!(format_size(1_572_864), "1.5 MB");
+        assert_eq!(format_size(3 * 1024 * 1024 * 1024 + 1), "3.0 GB");
     }
 
     #[test]
@@ -146,12 +146,12 @@ mod tests {
         assert!(check_size(&"a".repeat(MAX_SPEC_FILE_BYTES)).is_ok());
         let err = check_size(
             &(0..MAX_SPEC_FILE_BYTES + 10)
-                .map(|_| "ж")
+                .map(|_| "x")
                 .collect::<String>(),
         );
         let msg = err.unwrap_err();
-        assert!(msg.contains("слишком большой"));
-        assert!(msg.contains("лимит"));
+        assert!(msg.contains("too large"));
+        assert!(msg.contains("limit"));
     }
 
     #[test]

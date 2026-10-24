@@ -56,10 +56,10 @@ function clear(): HTMLDivElement {
   }
   session.root.classList.remove("ok", "bad");
   const frame = el("div", "frame");
-  const title = el("div", "wiz-title", "Мастер импорта");
+  const title = el("div", "wiz-title", "Import Templates");
   const closeBtn = el("button", "icon-btn");
   closeBtn.innerHTML = icon("x", 14);
-  closeBtn.title = "Закрыть (Esc)";
+  closeBtn.title = "Close (Esc)";
   closeBtn.addEventListener("click", close);
   frame.append(title, closeBtn);
   session.root.appendChild(frame);
@@ -76,8 +76,8 @@ function renderPick(): void {
   const zone = el("div", "dz");
   zone.innerHTML =
     `<span class="dz-ico">${icon("file", 26)}</span>` +
-    `<span class="dz-title">Выберите архив экспорта</span>` +
-    `<span class="dz-sub">.zip — восстановит шаблоны и настройки</span>`;
+    `<span class="dz-title">Select export archive</span>` +
+    `<span class="dz-sub">.zip — restores templates and settings</span>`;
   zone.addEventListener("click", () => void pickFlow());
   frame.appendChild(zone);
 }
@@ -107,17 +107,17 @@ function renderCheck(check: ImportCheckDto): void {
   const frame = clear();
 
   const stage = el("div", "stage");
-  stage.title = "Выбрать другой архив";
+  stage.title = "Choose another archive";
   const inner = el("div", "stage-inner");
   const ico = el("div", "stage-ico");
   ico.innerHTML = icon(check.ok ? "check" : "warning", 28);
   const meta = el("div", "stage-meta");
   const name = el("div", "s-name");
-  name.textContent = check.ok ? `${check.name}.zip` : check.error || "Ошибка";
+  name.textContent = check.ok ? `${check.name}.zip` : check.error || "Error";
   const size = el("div", "s-size");
   size.textContent = check.ok
-    ? `${(check.size_bytes / 1024).toFixed(1)} КБ · готов к импорту`
-    : "Нажмите, чтобы выбрать другой архив";
+    ? `${(check.size_bytes / 1024).toFixed(1)} KB · ready to import`
+    : "Click to choose another archive";
   meta.append(name, size);
   inner.append(ico, meta);
   stage.appendChild(inner);
@@ -127,7 +127,7 @@ function renderCheck(check: ImportCheckDto): void {
   if (check.ok) {
     const area = el("div", "area");
     const imp = el("button", "btn btn-primary");
-    imp.innerHTML = `${icon("check", 15)}<span>Импортировать</span>`;
+    imp.innerHTML = `${icon("check", 15)}<span>Import</span>`;
     imp.addEventListener("click", () => void importFlow(imp));
     area.appendChild(imp);
     frame.appendChild(area);
@@ -142,7 +142,7 @@ function renderCheck(check: ImportCheckDto): void {
 async function importFlow(imp: HTMLButtonElement): Promise<void> {
   if (session.busy || !session.file) return;
   session.busy = true;
-  const restore = setBusy(imp, "Импорт…");
+  const restore = setBusy(imp, "Importing…");
   try {
     await api.importTemplate(session.file);
     close();

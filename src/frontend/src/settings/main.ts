@@ -85,35 +85,35 @@ function render(): void {
 
   // Floating save button: slides in when there are unsaved changes.
   const fab = el("button", "save-fab hidden");
-  fab.title = "Сохранить изменения";
+  fab.title = "Save changes";
   fab.innerHTML = icon("save", 18);
   fab.addEventListener("click", () => void saveFlow(fab));
 
   const closeBtn = el("button", "icon-btn");
   closeBtn.innerHTML = icon("x", 14);
-  closeBtn.title = "Закрыть (Esc)";
+  closeBtn.title = "Close (Esc)";
   closeBtn.addEventListener("click", requestClose);
   frame.appendChild(closeBtn);
 
   const title = el("div", "title");
   title.setAttribute("data-drag", "");
-  title.textContent = "Настройки";
+  title.textContent = "Settings";
   frame.appendChild(title);
 
   // Hotkey: click the field to record a new combination.
-  sectionLabel(frame, "Горячая клавиша");
+  sectionLabel(frame, "Global hotkey");
   const hotkeyInput = el("input", "input mono hotkey-input");
   hotkeyInput.readOnly = true;
   hotkeyInput.value = cfg.hotkey;
-  hotkeyInput.title = "Нажмите, чтобы задать комбинацию";
+  hotkeyInput.title = "Click to set key combination";
   hotkeyInput.addEventListener("click", () => void startHotkeyCapture(hotkeyInput, fab));
   frame.appendChild(hotkeyInput);
   const hint = el("div", "hint");
-  hint.textContent = "Клик по полю — запись комбинации, Esc — отмена";
+  hint.textContent = "Click field to record combination, Esc to cancel";
   frame.appendChild(hint);
 
   // Provider segmented control.
-  sectionLabel(frame, "Провайдер");
+  sectionLabel(frame, "Provider");
   const seg = el("div", "segmented");
   for (const p of PROVIDERS) {
     const b = el("button", "seg-btn");
@@ -132,19 +132,19 @@ function render(): void {
   frame.appendChild(seg);
 
   // API key + model for the selected provider.
-  sectionLabel(frame, "API-ключ");
+  sectionLabel(frame, "API key");
   const keyInput = el("input", "input mono");
   keyInput.type = "password";
   keyInput.value = keyOf(cfg, cfg.provider);
   keyInput.spellcheck = false;
-  keyInput.placeholder = "Вставьте ключ провайдера";
+  keyInput.placeholder = "Enter provider API key";
   keyInput.addEventListener("input", () => {
     setKey(cfg, cfg.provider, keyInput.value);
     refreshSaveButton(fab);
   });
   frame.appendChild(keyInput);
 
-  sectionLabel(frame, "Модель");
+  sectionLabel(frame, "Model");
   const modelInput = el("input", "input mono");
   modelInput.value = modelOf(cfg, cfg.provider);
   modelInput.spellcheck = false;
@@ -157,7 +157,7 @@ function render(): void {
   // Provider availability check: sends a minimal request with the CURRENT
   // form values (unsaved edits included).
   const checkRow = el("div", "check-row");
-  const checkBtn = btn("btn-dark", "zap", "Проверить связь");
+  const checkBtn = btn("btn-dark", "zap", "Test connection");
   const checkStatus = el("span", "check-status mono");
   checkBtn.addEventListener("click", () => void testProviderFlow(checkBtn, checkStatus));
   checkRow.append(checkBtn, checkStatus);
@@ -165,7 +165,7 @@ function render(): void {
 
   // Auto-paste toggle.
   const row = el("div", "toggle-row");
-  const toggleLabel = el("span", "toggle-label", "Автовставка в предыдущее окно");
+  const toggleLabel = el("span", "toggle-label", "Auto-paste into previous window");
   const sw = el("label", "switch");
   const swInput = document.createElement("input");
   swInput.type = "checkbox";
@@ -180,22 +180,22 @@ function render(): void {
   frame.appendChild(row);
   const toggleHint = el("div", "hint");
   toggleHint.textContent =
-    "Вкл — «Вставить» сразу вставляет сниппет в окно, активное до вызова меню; выкл — только копирует в буфер";
+    "On: 'Paste' inserts snippet directly into active window; Off: copies to clipboard only";
   frame.appendChild(toggleHint);
 
   // Export folder.
-  sectionLabel(frame, "Папка экспорта");
+  sectionLabel(frame, "Export folder");
   const dirRow = el("div", "dir-row");
   const dirLabel = el("span", "dir-label mono");
   const refreshDirLabel = () => {
-    dirLabel.textContent = cfg.export_dir.trim() || session.defaultDir || "Не задана";
+    dirLabel.textContent = cfg.export_dir.trim() || session.defaultDir || "Default folder";
   };
   refreshDirLabel();
   const dirBtns = el("div", "dir-btns");
-  const chooseDir = btn("btn-dark", "folder", "Выбрать…");
+  const chooseDir = btn("btn-dark", "folder", "Browse…");
   chooseDir.addEventListener("click", () => void pickExportDir(cfg, refreshDirLabel, fab));
   const resetDir = btn("btn-ghost btn-icon", "x", "");
-  resetDir.title = "Сбросить на папку по умолчанию";
+  resetDir.title = "Reset to default folder";
   resetDir.addEventListener("click", () => {
     cfg.export_dir = "";
     refreshDirLabel();
@@ -272,13 +272,13 @@ async function pickExportDir(
 async function testProviderFlow(button: HTMLButtonElement, status: HTMLElement): Promise<void> {
   if (session.busy || !session.cfg) return;
   session.busy = true;
-  const restore = setBusy(button, "Проверка…");
+  const restore = setBusy(button, "Testing…");
   status.classList.remove("ok", "bad");
   status.textContent = "";
   try {
     const cfg = session.cfg;
     await api.testProvider(cfg.provider, keyOf(cfg, cfg.provider), modelOf(cfg, cfg.provider));
-    status.textContent = "Отвечает";
+    status.textContent = "Connected";
     status.classList.add("ok");
   } catch (e) {
     status.textContent = String(e);
@@ -320,7 +320,7 @@ function startHotkeyCapture(input: HTMLInputElement, fab: HTMLButtonElement): vo
   if (session.busy || session.capturing || !session.cfg) return;
   session.capturing = true;
   input.classList.add("capturing");
-  input.value = "Нажмите комбинацию… (Esc — отмена)";
+  input.value = "Press combination… (Esc to cancel)";
 
   const onKey = (e: KeyboardEvent) => {
     e.preventDefault();
@@ -366,7 +366,7 @@ function requestClose(): void {
 function saveErrorText(e: unknown): string {
   const raw = String(e);
   if (/api[-_ ]?key|unauthorized|401|403/i.test(raw)) {
-    return "Проверьте API-ключ или доступность провайдера.";
+    return "Check API key or provider availability.";
   }
   return raw;
 }
@@ -421,7 +421,7 @@ function showErrorModal(message: string): Promise<void> {
     const ico = el("span", "mini-ico");
     ico.innerHTML = icon("warning", 20);
     const text = el("div", "mini-text");
-    text.appendChild(el("div", "mini-title", "Ошибка"));
+    text.appendChild(el("div", "mini-title", "Error"));
     const msg = el("div", "mini-msg");
     msg.textContent = message;
     text.appendChild(msg);
@@ -461,14 +461,14 @@ function showWarnModal(): void {
   const ico = el("span", "mini-ico warn");
   ico.innerHTML = icon("warning", 20);
   const text = el("div", "mini-text");
-  text.appendChild(el("div", "mini-title warn", "Предупреждение"));
+  text.appendChild(el("div", "mini-title warn", "Warning"));
   const msg = el("div", "mini-msg");
-  msg.textContent = "Есть несохранённые изменения. Закрыть без сохранения?";
+  msg.textContent = "You have unsaved changes. Close without saving?";
   text.appendChild(msg);
   body.append(ico, text);
   const foot = el("div", "mini-foot");
-  const cancel = btn("btn-dark", null, "Отмена");
-  const force = btn("btn-danger", null, "Все равно закрыть");
+  const cancel = btn("btn-dark", null, "Cancel");
+  const force = btn("btn-danger", null, "Close anyway");
   foot.append(cancel, force);
   card.append(body, foot);
   overlay.appendChild(card);
@@ -491,7 +491,7 @@ function showWarnModal(): void {
   });
   session.dismissModal = dismiss;
   session.root.appendChild(overlay);
-  // Keyboard-first: Enter presses the safe default (Отмена).
+  // Keyboard-first: Enter presses the safe default (Cancel).
   cancel.focus();
 }
 
