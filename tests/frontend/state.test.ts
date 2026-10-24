@@ -15,6 +15,7 @@ import {
   initialModel,
   moveDown,
   moveUp,
+  openSettingsEntry,
   retract,
   selectAction,
   type OverlayModel,
@@ -59,6 +60,26 @@ describe("expand/retract", () => {
 
   it("retract is null at the hub", () => {
     expect(retract(initialModel(1))).toBeNull();
+  });
+});
+
+describe("settings entry", () => {
+  it("opens from the hub only", () => {
+    const m = openSettingsEntry(initialModel(4))!;
+    expect(m.phase).toBe("settings");
+    expect(openSettingsEntry(model(4, { phase: "snippets" }))).toBeNull();
+  });
+
+  it("retracts back to the hub", () => {
+    const m = retract(model(4, { phase: "settings" }))!;
+    expect(m.phase).toBe("hub");
+  });
+
+  it("is a leaf: expand and navigation do nothing inside", () => {
+    const s = model(4, { phase: "settings" });
+    expect(expand(s)).toBeNull();
+    expect(moveUp(s)).toBe(s);
+    expect(moveDown(s)).toBe(s);
   });
 });
 
