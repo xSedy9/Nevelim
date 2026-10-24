@@ -309,9 +309,14 @@ export async function main(): Promise<void> {
           const next = openSettingsEntry(session.model);
           if (next) apply(next);
         } else if (session.model.phase === "settings") {
-          // Left on the settings pill fans out its actions (symmetric with
-          // the hub, where Left reveals the settings pill).
-          expandSettingsActions();
+          // Left on the settings pill fans out its actions the first time;
+          // after coming back from the actions it retracts further to the hub
+          // instead of re-expanding (no stuck loop).
+          if (session.model.settingsExpanded) {
+            retractOne();
+          } else {
+            expandSettingsActions();
+          }
         } else {
           retractOne();
         }
