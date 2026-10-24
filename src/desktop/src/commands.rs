@@ -192,7 +192,7 @@ fn import_error(error: &str) -> ImportCheckDto {
     }
 }
 
-/// Quick validation of a candidate import file (extension, readability, size).
+/// Quick validation of a candidate backup archive (extension, readability).
 #[tauri::command]
 pub fn check_import_file(file: String) -> ImportCheckDto {
     let path = std::path::Path::new(&file);
@@ -204,56 +204,38 @@ pub fn check_import_file(file: String) -> ImportCheckDto {
         .and_then(|e| e.to_str())
         .map(|e| e.to_lowercase())
         .unwrap_or_default();
-    if !matches!(ext.as_str(), "md" | "txt") {
-        return import_error("Подходят только файлы .md или .txt.");
+    if ext != "zip" {
+        return import_error("Подходит только архив экспорта (.zip).");
     }
-    match std::fs::read_to_string(path) {
-        Ok(content) => {
-            if let Err(msg) = quick_snippets_core::spec::check_size(&content) {
-                return import_error(&msg);
-            }
-            if content.trim().is_empty() {
-                return import_error("Файл не содержит текста.");
-            }
-            ImportCheckDto {
-                ok: true,
-                name: path
-                    .file_stem()
-                    .map(|s| s.to_string_lossy().to_string())
-                    .unwrap_or_default(),
-                size_bytes: content.len() as u64,
-                error: None,
-            }
-        }
-        Err(e) => import_error(&format!("Ошибка чтения файла: {e}")),
+    match export::validate_backup(path) {
+        Ok(info) if info.has_config || info.templates > 0 => ImportCheckDto {
+            ok: true,
+            name: path
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default(),
+            size_bytes: std::fs::metadata(path).map(|m| m.len()).unwrap_or(0),
+            error: None,
+        },
+        Ok(_) => import_error("Архив не содержит настроек или шаблонов."),
+        Err(e) => import_error(&format!("Архив повреждён: {e}")),
     }
 }
 
-/// Imports a validated file into the templates directory.
+/// Restores a validated backup archive into templates and config.
 #[tauri::command]
 pub fn import_template(file: String) -> Result<String, String> {
     let src = std::path::Path::new(&file);
     if !src.is_file() {
         return Err("Файл не существует.".to_string());
     }
-    let templates_dir = base_dir().join("templates");
-    std::fs::create_dir_all(&templates_dir).map_err(|e| e.to_string())?;
-    let stem = src
-        .file_stem()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_else(|| "snippet".to_string());
-    let mut dest = templates_dir.join(format!("{stem}.md"));
-    // Never overwrite an existing template: add a numeric suffix instead.
-    let mut n = 1;
-    while dest.exists() {
-        dest = templates_dir.join(format!("{stem} ({n}).md"));
-        n += 1;
-    }
-    std::fs::copy(src, &dest).map_err(|e| e.to_string())?;
-    Ok(dest
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_default())
+    let imported = export::import_backup(
+        src,
+        &base_dir().join("templates"),
+        &config::resolve_config_path(),
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(format!("Импортировано шаблонов: {imported}"))
 }
 
 /// Opens (or focuses) the import wizard window.
@@ -389,6 +371,21 @@ pub async fn pick_file(app: AppHandle) -> Result<Option<String>, String> {
                 "Документы спецификаций",
                 &["md", "txt", "json", "yaml", "yml"],
             )
+            .blocking_pick_file()
+            .and_then(|fp| fp.as_path().map(|p| p.to_string_lossy().to_string())))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Opens the native file picker filtered to backup archives (.zip).
+#[tauri::command]
+pub async fn pick_import_file(app: AppHandle) -> Result<Option<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        Ok(app
+            .dialog()
+            .file()
+            .add_filter("Архив экспорта", &["zip"])
             .blocking_pick_file()
             .and_then(|fp| fp.as_path().map(|p| p.to_string_lossy().to_string())))
     })

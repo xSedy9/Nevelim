@@ -51,6 +51,7 @@ pub fn run() {
             commands::open_path,
             commands::pick_folder,
             commands::pick_file,
+            commands::pick_import_file,
             commands::load_spec_from_folder,
             commands::load_spec_from_file,
             commands::set_overlay_input,
