@@ -153,7 +153,8 @@ function chooseFolder(): void {
   zone.innerHTML =
     `<span class="dz-ico">${icon("folder", 26)}</span>` +
     `<span class="dz-title">Выберите папку проекта</span>` +
-    `<span class="dz-sub">диалог откроется автоматически</span>`;
+    `<span class="dz-sub">Автопоиск в docs/ или корне проекта:</span>` +
+    `<span class="dz-files mono">SPECIFICATION.md · spec.md · SPEC.md · README.md · *.md</span>`;
   zone.addEventListener("click", () => void pickFolderFlow());
   frame.appendChild(zone);
 

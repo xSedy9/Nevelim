@@ -156,6 +156,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Same inset as the button's side margins (frame padding). */
+  margin-top: 16px;
 }
 
 /* ---------- Buttons ---------- */
@@ -323,6 +325,15 @@ body {
 .dz-sub {
   font-size: 11.5px;
   color: var(--muted);
+}
+
+.dz-files {
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* ---------- Spec stage ---------- */
