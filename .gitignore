@@ -3,8 +3,10 @@ node_modules/
 target/
 dist/
 coverage/
+src/desktop/gen/
 
 # Runtime data
 history/
 logs/
 *.log.old
+config.json
