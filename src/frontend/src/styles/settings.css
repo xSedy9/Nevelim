@@ -71,6 +71,12 @@ body {
   transform: none;
 }
 
+/* The column overflows into a scrollbar; without this flex-shrink squeezes
+   inputs down to their ~20px intrinsic minimum and any height is ignored. */
+.frame > * {
+  flex: none;
+}
+
 .frame::-webkit-scrollbar {
   width: 6px;
 }
