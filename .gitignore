@@ -1,18 +1,12 @@
-# Node / frontend
+# Build artifacts
 node_modules/
+target/
 dist/
 coverage/
-*.local
-.vite/
-
-# Rust / Tauri
-target/
 src/desktop/gen/
 
-# Logs & OS junk
-*.log
-.DS_Store
-Thumbs.db
-
-# Local config with real API keys (use config.example.json)
+# Runtime data
+history/
+logs/
+*.log.old
 config.json

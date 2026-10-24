@@ -1,0 +1,351 @@
+/* Import wizard - full-frame drop zone, status icon, import action.
+   Same black-and-white language as the rest of the app. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --surface: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.3);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.5);
+  --ok: #22c55e;
+  --err: #ef4444;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  user-select: none;
+  color: var(--text);
+}
+
+#import-root {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+}
+
+#import-root.ok .frame {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+#import-root.bad .frame {
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+/* File is dragged over the window. */
+#import-root.dragging .frame {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+#import-root.dragging .dz,
+#import-root.dragging .stage {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 46px 16px 14px;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+    #000000;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transform: translateY(12px) scale(0.94);
+  transition:
+    opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.frame.shown {
+  opacity: 1;
+  transform: none;
+}
+
+/* Symmetric exit: quick fade + slight scale-down, pinned over the root. */
+.frame.leaving {
+  position: absolute;
+  inset: 6px;
+  width: auto;
+  height: auto;
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+/* Keyboard focus ring (Tab navigation). */
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+
+.icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.15s;
+}
+
+.icon-btn:hover {
+  color: #ffffff;
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+.wiz-title {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dz {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--text);
+  font-family: inherit;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.dz:hover {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dz-ico {
+  color: var(--muted);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.dz:hover .dz-ico {
+  transform: scale(1.12);
+}
+
+.dz-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.dz-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* ---------- Status ---------- */
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color 0.3s,
+    background 0.3s;
+}
+
+#import-root.ok .stage {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+#import-root.bad .stage {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.stage-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px;
+  min-width: 0;
+}
+
+.stage-ico {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: #ffffff;
+}
+
+.stage-meta {
+  min-width: 0;
+}
+
+.s-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.s-size {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+
+.err-line {
+  color: var(--err);
+  font-size: 11.5px;
+  text-align: center;
+  padding-bottom: 10px;
+  word-break: break-word;
+}
+
+/* ---------- Buttons ---------- */
+
+/* Gap between the file card and the action button mirrors the button's
+   horizontal padding (16px). */
+.area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* The action button rises in after the color transition starts. */
+.area > .btn {
+  animation: rise-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+  background: transparent;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s,
+    transform 0.12s,
+    width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: scale(0.98);
+  transition: transform 0.1s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.btn-primary {
+  background: #ffffff;
+  color: #000000;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.16);
+}
+
+.btn-dark {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border);
+}
+
+.btn-dark:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: var(--border-strong);
+}
+
+.btn.loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

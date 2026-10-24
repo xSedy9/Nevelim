@@ -1,0 +1,694 @@
+/* Settings window - minimalist black-and-white UI.
+   Layered via white-alpha on black, segmented control, custom switch. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --surface: rgba(255, 255, 255, 0.03);
+  --surface-hover: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: rgba(255, 255, 255, 0.3);
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.5);
+  --ok: #22c55e;
+  --err: #ef4444;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  user-select: none;
+  color: var(--text);
+  /* Ultra-thin custom scrollbars per the design rules. */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
+#settings-root {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+}
+
+#settings-root.error .frame {
+  border-color: rgba(239, 68, 68, 0.65);
+}
+
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 46px 18px 16px;
+  overflow-y: auto;
+  /* Scrollable but scrollbar-less (wheel/keyboard still work). */
+  scrollbar-width: none;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+    #000000;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transform: translateY(12px) scale(0.94);
+  transition:
+    opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.frame.shown {
+  opacity: 1;
+  transform: none;
+}
+
+/* Symmetric exit: quick fade + slight scale-down, pinned over the root. */
+.frame.leaving {
+  position: absolute;
+  inset: 6px;
+  width: auto;
+  height: auto;
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+/* Keyboard focus ring (Tab navigation). */
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28);
+}
+
+/* Staggered row entrance (Smooth Decel, 30ms per row). */
+.frame.shown > *:not(.title):not(.icon-btn):not(.save-fab) {
+  animation: row-in 0.26s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--i, 0) * 0.03s);
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* The column overflows into a scrollbar; without this flex-shrink squeezes
+   inputs down to their ~20px intrinsic minimum and any height is ignored. */
+.frame > * {
+  flex: none;
+}
+
+.frame::-webkit-scrollbar {
+  display: none;
+}
+
+.title {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  z-index: 5;
+}
+
+.s-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.input {
+  width: 100%;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  user-select: text;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.input.mono {
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+
+.input:focus {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: -2px;
+}
+
+/* ---------- Segmented control ---------- */
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.seg-btn {
+  flex: 1;
+  height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+}
+
+.seg-btn:hover {
+  color: var(--text);
+}
+
+.seg-btn:active {
+  transform: scale(0.98);
+}
+
+.seg-btn.active {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* ---------- Provider check ---------- */
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.check-row .btn {
+  width: auto;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 12px;
+  flex: none;
+}
+
+.check-status {
+  font-size: 11.5px;
+  color: var(--muted);
+  min-width: 0;
+  word-break: break-word;
+  user-select: text;
+}
+
+.check-status.ok {
+  color: var(--ok);
+}
+
+.check-status.bad {
+  color: var(--err);
+}
+
+/* ---------- Toggle switch ---------- */
+
+.dir-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 9px 12px;
+}
+
+.dir-label {
+  font-size: 11.5px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.dir-btns {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.dir-btns .btn {
+  width: auto;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 11.5px;
+}
+
+/* Square icon-only variant (reset folder). */
+.dir-btns .btn.btn-icon {
+  width: 30px;
+  padding: 0;
+  gap: 0;
+  justify-content: center;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    transform 0.12s,
+    width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-dark {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border);
+}
+
+.btn-dark:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: var(--border-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.toggle-label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.switch input {
+  display: none;
+}
+
+.switch .track {
+  display: block;
+  width: 38px;
+  height: 20px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  transition: background 0.18s;
+}
+
+.switch .track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.switch input:checked + .track {
+  background: #ffffff;
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(18px);
+  background: #000000;
+}
+
+/* ---------- Footer ---------- */
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.err {
+  color: var(--err);
+  font-size: 11.5px;
+  text-align: center;
+  min-height: 0;
+  word-break: break-word;
+}
+
+.err:empty {
+  display: none;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  border: none;
+  background: #ffffff;
+  color: #000000;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    box-shadow 0.15s,
+    transform 0.12s,
+    opacity 0.15s;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary.loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.icon-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.15s;
+}
+
+.icon-btn:hover {
+  color: #ffffff;
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Hotkey capture ---------- */
+
+.hotkey-input {
+  cursor: pointer;
+}
+
+.input.capturing {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- Floating save button ---------- */
+
+.save-fab {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  z-index: 15;
+  box-shadow: 0 6px 26px rgba(255, 255, 255, 0.16);
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.3, 1),
+    opacity 0.22s ease-out,
+    background 0.2s,
+    color 0.2s;
+}
+
+.save-fab.hidden {
+  transform: translateX(90px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.save-fab.loading {
+  pointer-events: none;
+}
+
+.save-fab.ok {
+  background: var(--ok);
+  color: #ffffff;
+}
+
+.save-fab.err {
+  background: var(--err);
+  color: #ffffff;
+}
+
+.save-fab .spinner {
+  border-color: rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+}
+
+/* ---------- Mini modals (warning / error) ---------- */
+
+.mini-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 20px;
+  animation: overlay-in 0.2s ease-out;
+}
+
+.mini-overlay.leaving {
+  opacity: 0;
+  transition: opacity 0.18s cubic-bezier(0.4, 0, 1, 1);
+  pointer-events: none;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.mini-card {
+  width: 340px;
+  max-width: calc(100% - 32px);
+  padding: 16px;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 50%),
+    #000000;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  /* Smooth Decel enter: rise + scale per the animation spec. */
+  animation: card-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+
+/* Warning variant: amber per the user's request (sole exception to the
+   black-and-white palette besides ok/err). */
+.mini-card.warn {
+  border-color: rgba(234, 179, 8, 0.45);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.55),
+    0 0 30px rgba(234, 179, 8, 0.08);
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.94);
+  }
+}
+
+.mini-overlay.leaving .mini-card {
+  opacity: 0;
+  transform: scale(0.97);
+  transition:
+    opacity 0.18s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.18s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.mini-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.mini-ico {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--err);
+  transition:
+    background 0.3s,
+    border-color 0.3s,
+    color 0.3s;
+}
+
+.mini-ico.warn {
+  background: rgba(234, 179, 8, 0.12);
+  border-color: rgba(234, 179, 8, 0.35);
+  color: #eab308;
+}
+
+.mini-text {
+  min-width: 0;
+}
+
+.mini-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--err);
+  transition: color 0.3s;
+}
+
+.mini-title.warn {
+  color: #eab308;
+}
+
+.mini-msg {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.mini-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mini-foot .btn {
+  width: auto;
+  min-width: 74px;
+  height: 32px;
+  font-size: 12px;
+}
+
+/* ~10% wider than the sibling buttons per the user's request. */
+.mini-foot .btn-danger {
+  min-width: 82px;
+}
+
+.btn-danger {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: var(--err);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: var(--err);
+}

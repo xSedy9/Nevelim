@@ -1,4 +1,4 @@
-# Contributing to Quick Snippets
+# Contributing to Nevelim
 
 Thank you for considering a contribution! This project follows a strict, boring,
 predictable workflow — please read this page before opening a pull request.
