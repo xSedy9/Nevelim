@@ -1,39 +1,51 @@
 # Quick Snippets
 
 A cross-platform hotkey-driven snippet launcher with AI-powered template adaptation.
-Press a global hotkey and a radial overlay appears right at your cursor: pick a snippet,
-pick an action — copy, paste, edit, or adapt it to your project's specification with an
-AI provider of your choice (Gemini, OpenAI, OpenRouter).
+Press a global hotkey (default `alt+shift+v`) and a radial overlay appears right at your
+cursor: pick a snippet, pick an action — copy, paste, edit, or adapt it to your project's
+specification with an AI provider of your choice (Gemini, OpenAI, OpenRouter).
 
 Built with **Tauri v2** (Rust + TypeScript). No Electron, no heavy UI frameworks —
 just a tiny webview, native-speed backend logic and GPU-rendered UI.
 
-> Status: **work in progress** — the project is being rebuilt from the ground up on
-> Tauri. See [docs/](docs/) for the current technical specification and roadmap.
-
-## Features (planned / in development)
+## Features
 
 - Global hotkey summons a lightweight overlay right at the mouse cursor
-- Snippet library from plain `templates/*.md` files
+- Snippet library from plain `templates/*.md` / `*.txt` files
 - Radial navigation: hub → snippets → actions, fully keyboard-driven
-- Actions: copy, paste into the previous window, open in editor, AI-adapt
-- AI adaptation against a project specification (`docs/SPECIFICATION.md`, `spec.md`, …)
-  with an interactive refinement chat
+  (arrows dive in and out on the matching side of the hub, `Enter` runs,
+  `1–4` are shortcuts, `Esc` closes)
+- Actions: copy, paste into the previously focused window (auto-paste is
+  configurable), open in editor, AI-adapt
+- AI adaptation against a project specification (`docs/SPECIFICATION.md`,
+  `spec.md`, …) with an interactive refinement chat
+- Settings window: hotkey recorder (click and press a combination), provider
+  switch with an availability check, export folder picker, auto-paste toggle
+- Backup export: config + templates packed into a timestamped `.zip` in the
+  export folder (the folder opens automatically); the import wizard restores
+  such archives (without overwriting existing templates)
 - Local-first: templates, history and config live on your machine
-- Cross-platform: Windows (primary), macOS and Linux (X11) targets
 
 ## Repository layout
 
 ```
-src/frontend/   TypeScript + Vite web layer (overlay & modal UI)
+src/frontend/   TypeScript + Vite web layer (overlay, modal, settings, import UI)
 src/backend/    quick-snippets-core: pure Rust business logic (no Tauri dependency)
-src/desktop/    quick-snippets-desktop: Tauri shell (windows, hotkeys, plugins)
-tests/          Frontend (Vitest) and end-to-end tests
+src/desktop/    quick-snippets-desktop: Tauri shell (windows, hotkeys, plugins, IPC)
+tests/          Frontend (Vitest) and end-to-end smoke tests
 docs/           Technical documentation & specifications
+config.example.json    Template for the local config.json (API keys live there)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and
-[SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+## User data
+
+All data lives next to the executable (or in the project root during development):
+
+| Path               | Purpose                                            |
+| ------------------ | -------------------------------------------------- |
+| `config.json`      | Settings: hotkey, provider, API keys, export dir   |
+| `templates/`       | Your snippets (`.md` / `.txt`)                     |
+| `history/`         | Adaptation results per snippet                     |
 
 ## Development
 
@@ -52,8 +64,20 @@ Useful frontend scripts (run inside `src/frontend`):
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint
 npm test             # vitest (unit tests live in tests/frontend/)
+npm run test:coverage
 npm run app:build    # production desktop bundle
 ```
+
+Rust checks (run in the repository root):
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace -- -D warnings
+cargo test --workspace
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and
+[SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ## License
 
