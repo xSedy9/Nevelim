@@ -94,9 +94,14 @@ body {
   padding: 2px 0 14px;
 }
 
-.p-ico {
-  display: inline-flex;
-  color: var(--muted);
+/* Strip variant: sits inside the 46px nav strip, aligned with the buttons. */
+.prompt.strip {
+  position: absolute;
+  top: 12px;
+  left: 52px;
+  right: 52px;
+  height: 28px;
+  padding: 0;
 }
 
 .loading {
@@ -236,18 +241,15 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(16, 16, 19, 0.6);
+  background: transparent;
   border: none;
   color: var(--muted);
   cursor: pointer;
   z-index: 10;
-  transition:
-    background 0.15s,
-    color 0.15s;
+  transition: color 0.15s;
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
 
