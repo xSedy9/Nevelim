@@ -178,6 +178,10 @@ pub fn default_export_dir() -> String {
 /// config), so the check reflects unsaved edits.
 #[tauri::command]
 pub async fn test_provider(provider: String, key: String, model: String) -> Result<String, String> {
+    // Trim the form values: stray whitespace is invisible in password fields
+    // and turns into provider 401s.
+    let key = key.trim().to_string();
+    let model = model.trim().to_string();
     let mut config = config::load_or_default(&config::resolve_config_path());
     config.provider = match provider.as_str() {
         "gemini" => Provider::Gemini,
