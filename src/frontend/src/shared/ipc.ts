@@ -158,7 +158,7 @@ export const api = {
   openSettings: (): Promise<void> => invoke("open_settings"),
   /** Closes the settings window. */
   closeSettings: (): Promise<void> => invoke("close_settings"),
-  /** Copies all templates into the configured export folder. */
+  /** Packs config + templates into a timestamped zip in the export folder and opens it. */
   exportTemplates: (): Promise<string> => invoke("export_templates"),
   /** Validates a candidate import file. */
   checkImportFile: (file: string): Promise<ImportCheckDto> =>

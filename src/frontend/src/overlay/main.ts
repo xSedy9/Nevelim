@@ -185,15 +185,15 @@ async function runSettingsAction(key: SettingsActionKey): Promise<void> {
       await openSettingsWindow();
       break;
     case "export": {
-      let message = "";
-      let failed = false;
+      let failure = "";
       try {
-        message = await api.exportTemplates();
+        await api.exportTemplates();
       } catch (e) {
-        message = String(e);
-        failed = true;
+        failure = String(e);
       }
-      await toast(message, failed);
+      // Success feedback is the opened export folder itself; only failures
+      // need an explicit message.
+      if (failure) await toast(failure, true);
       await hideAndReset();
       break;
     }
