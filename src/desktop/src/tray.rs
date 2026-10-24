@@ -110,8 +110,14 @@ pub fn create_tray(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> {
             }
         });
 
-    if let Some(icon) = app.default_window_icon() {
-        builder = builder.icon(icon.clone());
+    // Dedicated tray icon: cropped with tight margins so it fills the system
+    // notification slot, falling back to the window icon if unavailable.
+    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray-icon.png"))
+        .ok()
+        .or_else(|| app.default_window_icon().cloned());
+
+    if let Some(icon) = icon {
+        builder = builder.icon(icon);
     }
 
     builder.build(app)?;
@@ -149,5 +155,15 @@ mod tests {
         assert_eq!(TrayAction::Settings.title(), "Настройки");
         assert_eq!(TrayAction::Quit.title(), "Выйти");
         assert_eq!(TrayAction::Unknown.title(), "");
+    }
+
+    #[test]
+    fn dedicated_tray_icon_is_valid_image() {
+        let bytes = include_bytes!("../icons/tray-icon.png");
+        let img = tauri::image::Image::from_bytes(bytes);
+        assert!(img.is_ok());
+        let img = img.unwrap();
+        assert_eq!(img.width(), 128);
+        assert_eq!(img.height(), 128);
     }
 }
