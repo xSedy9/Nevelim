@@ -8,6 +8,7 @@
 pub mod ai;
 pub mod config;
 pub mod error;
+pub mod export;
 pub mod history;
 pub mod hotkey;
 pub mod paste;

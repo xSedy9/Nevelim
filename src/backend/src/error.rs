@@ -17,6 +17,10 @@ pub enum CoreError {
     #[error("http error: {0}")]
     Http(#[from] reqwest::Error),
 
+    /// Zip archive error during backup export.
+    #[error("zip error: {0}")]
+    Zip(#[from] zip::result::ZipError),
+
     /// Input injection error.
     #[error("input error: {0}")]
     Input(String),
