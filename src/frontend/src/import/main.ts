@@ -5,6 +5,8 @@
  * a green/red frame -> import into the templates directory.
  */
 
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+
 import { api, type ImportCheckDto } from "../shared/ipc";
 import { swapButtonContent } from "../shared/anim";
 import { icon } from "../shared/icons";
@@ -81,11 +83,15 @@ function renderPick(): void {
 
 /** File dialog -> quick validation -> status view. */
 async function pickFlow(): Promise<void> {
-  if (session.busy) return;
+  const file = await api.pickImportFile();
+  if (file) await checkFlow(file);
+}
+
+/** Validates a picked or dropped file and renders the status view. */
+async function checkFlow(file: string): Promise<void> {
+  if (session.busy || session.closing) return;
   session.busy = true;
   try {
-    const file = await api.pickImportFile();
-    if (!file) return;
     const check = await api.checkImportFile(file);
     if (check.ok) session.file = file;
     renderCheck(check);
@@ -159,10 +165,27 @@ function setBusy(btnEl: HTMLButtonElement, label: string): () => void {
   };
 }
 
+/** Wires Tauri drag-and-drop: dropping an archive file runs the check flow. */
+async function wireDragDrop(): Promise<void> {
+  await getCurrentWebview().onDragDropEvent((event) => {
+    if (session.closing) return;
+    if (event.payload.type === "enter" || event.payload.type === "over") {
+      session.root.classList.add("dragging");
+    } else if (event.payload.type === "leave") {
+      session.root.classList.remove("dragging");
+    } else {
+      session.root.classList.remove("dragging");
+      const path = event.payload.paths[0];
+      if (path) void checkFlow(path);
+    }
+  });
+}
+
 /** Entry point. */
 export async function main(): Promise<void> {
   session.root = document.getElementById("import-root") as HTMLDivElement;
   renderPick();
+  await wireDragDrop();
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !session.busy) close();

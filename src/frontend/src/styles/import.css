@@ -42,6 +42,17 @@ body {
   border-color: rgba(239, 68, 68, 0.65);
 }
 
+/* File is dragged over the window. */
+#import-root.dragging .frame {
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+#import-root.dragging .dz,
+#import-root.dragging .stage {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.07);
+}
+
 .frame {
   position: relative;
   width: 100%;
