@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Adaptation modal entry point.
  *
  * Modern dark UI driven by inline SVG icons: phase 1 - source selection,
@@ -76,13 +76,13 @@ function clear(back?: () => void): HTMLDivElement {
   if (back) {
     const backBtn = el("button", "icon-btn left");
     backBtn.innerHTML = icon("arrow-left", 14);
-    backBtn.title = "РќР°Р·Р°Рґ";
+    backBtn.title = "Назад";
     backBtn.addEventListener("click", back);
     frame.appendChild(backBtn);
   }
   const closeBtn = el("button", "icon-btn");
   closeBtn.innerHTML = icon("x", 14);
-  closeBtn.title = "Р—Р°РєСЂС‹С‚СЊ (Esc)";
+  closeBtn.title = "Закрыть (Esc)";
   closeBtn.addEventListener("click", () => close());
   frame.appendChild(closeBtn);
   session.root.appendChild(frame);
@@ -118,7 +118,7 @@ function renderSelect(): void {
   session.phase = "select";
   const frame = clear();
 
-  promptStrip(frame, "Р’С‹Р±РµСЂРёС‚Рµ РёСЃС‚РѕС‡РЅРёРє");
+  promptStrip(frame, "Выберите источник");
 
   const row = el("div", "halves");
   const halves: Array<{ ic: IconName; go: () => void }> = [
@@ -127,7 +127,7 @@ function renderSelect(): void {
   ];
   for (const h of halves) {
     const b = el("button", "half");
-    b.title = h.ic === "folder" ? "РџР°РїРєР° РїСЂРѕРµРєС‚Р°" : "Р¤Р°Р№Р» СЃРїРµС†РёС„РёРєР°С†РёРё";
+    b.title = h.ic === "folder" ? "Папка проекта" : "Файл спецификации";
     b.innerHTML = icon(h.ic, 46);
     b.addEventListener("click", h.go);
     row.appendChild(b);
@@ -150,8 +150,8 @@ function chooseFolder(): void {
   const zone = el("div", "dropzone full");
   zone.innerHTML =
     `<span class="dz-ico">${icon("folder", 26)}</span>` +
-    `<span class="dz-title">Р’С‹Р±РµСЂРёС‚Рµ РїР°РїРєСѓ РїСЂРѕРµРєС‚Р°</span>` +
-    `<span class="dz-sub">РґРёР°Р»РѕРі РѕС‚РєСЂРѕРµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё</span>`;
+    `<span class="dz-title">Выберите папку проекта</span>` +
+    `<span class="dz-sub">диалог откроется автоматически</span>`;
   zone.addEventListener("click", () => void pickFolderFlow());
   frame.appendChild(zone);
 
@@ -183,7 +183,7 @@ function chooseFile(): void {
   const zone = el("div", "dropzone full");
   zone.innerHTML =
     `<span class="dz-ico">${icon("file", 26)}</span>` +
-    `<span class="dz-title">Р’С‹Р±РµСЂРёС‚Рµ С„Р°Р№Р» СЃРїРµС†РёС„РёРєР°С†РёРё</span>` +
+    `<span class="dz-title">Выберите файл спецификации</span>` +
     `<span class="dz-sub">.md, .txt, .json, .yaml</span>`;
   zone.addEventListener("click", () => void pickFileFlow());
   frame.appendChild(zone);
@@ -226,11 +226,11 @@ function renderSpec(spec: SpecDto, isFolder: boolean): void {
 
   const area = el("div", "area");
   if (spec.found) {
-    const adapt = btn("btn-primary", "sparkle", "РђРґР°РїС‚РёСЂРѕРІР°С‚СЊ");
+    const adapt = btn("btn-primary", "sparkle", "Адаптировать");
     adapt.addEventListener("click", () => void adaptFlow(adapt));
     area.appendChild(adapt);
   } else {
-    const retry = btn("btn-dark", isFolder ? "folder" : "file", "РџРѕРІС‚РѕСЂРёС‚СЊ РІС‹Р±РѕСЂ");
+    const retry = btn("btn-dark", isFolder ? "folder" : "file", "Повторить выбор");
     retry.addEventListener("click", () => (isFolder ? chooseFolder() : chooseFile()));
     area.appendChild(retry);
   }
@@ -242,13 +242,13 @@ async function adaptFlow(adapt: HTMLButtonElement): Promise<void> {
   if (session.busy || !session.spec?.found) return;
   const spec = session.spec;
   session.busy = true;
-  const restore = setBusy(adapt, "РђРґР°РїС‚Р°С†РёСЏвЂ¦");
+  const restore = setBusy(adapt, "Адаптация…");
   try {
     const result = await api.adaptTemplate(spec.content, session.init?.snippet_content ?? "");
     session.chat = [];
     renderResult(result);
   } catch {
-    adapt.innerHTML = `${icon("warning", 15)}<span>РћС€РёР±РєР°</span>`;
+    adapt.innerHTML = `${icon("warning", 15)}<span>Ошибка</span>`;
     session.root.classList.add("error");
     await errorBorder();
     renderSpec(spec, session.specIsFolder);
@@ -271,7 +271,7 @@ function renderResult(text: string): void {
 
   const head = el("div", "result-head");
   head.setAttribute("data-drag", "");
-  const label = el("div", "result-label", "РђРґР°РїС‚РёСЂРѕРІР°РЅРЅС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚");
+  const label = el("div", "result-label", "Адаптированный результат");
   const chip = el("span", "chip mono");
   chip.innerHTML = `${icon("zap", 11)}<span>${session.init?.snippet_name ?? ""}</span>`;
   head.append(label, chip);
@@ -286,8 +286,8 @@ function renderResult(text: string): void {
   const chat = el("div", "chat");
   const input = document.createElement("input");
   input.className = "chat-input";
-  input.placeholder = "Р§С‚Рѕ РёР·РјРµРЅРёС‚СЊ? РќР°РїСЂРёРјРµСЂ: СЃРґРµР»Р°Р№ РєРѕСЂРѕС‡Рµ, РґРѕР±Р°РІСЊ С‚РёРїРёР·Р°С†РёСЋвЂ¦";
-  const send = btn("btn-dark", "send", "РћС‚РїСЂР°РІРёС‚СЊ");
+  input.placeholder = "Что изменить? Например: сделай короче, добавь типизацию…";
+  const send = btn("btn-dark", "send", "Отправить");
   send.addEventListener("click", () => void refineFlow(input, send, ta));
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") void refineFlow(input, send, ta);
@@ -296,7 +296,7 @@ function renderResult(text: string): void {
   frame.appendChild(chat);
 
   const footer = el("div", "footer");
-  const accept = btn("btn-primary", "check", "РџСЂРёРЅСЏС‚СЊ Рё РІСЃС‚Р°РІРёС‚СЊ");
+  const accept = btn("btn-primary", "check", "Принять и вставить");
   accept.addEventListener("click", () => {
     const final = ta.value.trim();
     if (!final || !session.init) return;
@@ -305,7 +305,7 @@ function renderResult(text: string): void {
       .then(() => api.pasteSnippet(final))
       .then(close);
   });
-  const copy = btn("btn-dark", "copy", "РЎРєРѕРїРёСЂРѕРІР°С‚СЊ");
+  const copy = btn("btn-dark", "copy", "Скопировать");
   copy.addEventListener("click", () => {
     const final = ta.value.trim();
     if (!final || !session.init) return;
@@ -328,10 +328,10 @@ async function refineFlow(
   const spec = session.spec;
   if (!prompt || session.busy || !spec?.found) return;
   session.busy = true;
-  const restore = setBusy(send, "Р”СѓРјР°РµС‚вЂ¦");
+  const restore = setBusy(send, "Думает…");
   session.chat.push({
     role: "user",
-    content: `РЈРўРћР§РќР•РќРР•: ${prompt}\n\nРўР•РљРЈР©РР™ Р’РђР РРђРќРў:\n${ta.value}`,
+    content: `УТОЧНЕНИЕ: ${prompt}\n\nТЕКУЩИЙ ВАРИАНТ:\n${ta.value}`,
   });
   try {
     const res = await api.refineResult(session.chat);
@@ -355,7 +355,7 @@ async function refineFlow(
 export async function main(): Promise<void> {
   session.root = document.getElementById("modal-root") as HTMLDivElement;
   const frame = clear();
-  frame.appendChild(el("div", "loading muted", "Р—Р°РіСЂСѓР·РєР°вЂ¦"));
+  frame.appendChild(el("div", "loading muted", "Загрузка…"));
 
   session.init = await api.getModalInit();
   if (!session.init) {

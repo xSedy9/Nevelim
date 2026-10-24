@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "Default capability for the overlay and modal windows. All system interaction (clipboard, dialogs, AI, paste) is exposed through application commands, so only core permissions are required.",
   "windows": ["overlay", "modal"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "core:window:allow-start-dragging"]
 }
